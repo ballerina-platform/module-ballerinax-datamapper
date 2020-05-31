@@ -1,0 +1,60 @@
+plugins {
+    id 'java'
+}
+
+group 'org.ballerinax'
+version '1.0-SNAPSHOT'
+
+sourceCompatibility = 1.8
+
+description = 'Ballerinax - DataMapper Extension'
+
+repositories {
+    maven {
+        url = 'https://maven.wso2.org/nexus/content/repositories/releases/'
+    }
+
+    maven {
+        url = 'https://maven.wso2.org/nexus/content/repositories/snapshots/'
+    }
+
+    maven {
+        url = 'https://maven.wso2.org/nexus/content/groups/wso2-public/'
+    }
+
+    maven {
+        url = 'https://repo.maven.apache.org/maven2'
+    }
+}
+
+dependencies {
+    compile group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.8.6'
+    compile group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: '2.8.6'
+    compile group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: '2.8.0'
+    implementation group: 'org.ballerinalang', name: 'ballerina-lang', version: '1.2.4'
+    implementation group: 'org.ballerinalang', name: 'ballerina-test-utils', version: '1.2.4'
+//    implementation group: 'junit', name: 'junit', version: '4.8.2'
+    testCompile 'org.testng:testng:6.13.1'
+}
+
+test {
+    systemProperty "java.util.logging.config.file", "src/test/resources/logging.properties"
+    systemProperty "java.util.logging.manager", "org.ballerinalang.logging.BLogManager"
+    systemProperty "ballerina.home", "/home/miyurud/software/ballerina-1.2.4/distributions/jballerina-1.2.4"
+
+    useTestNG() {
+        suites 'src/test/resources/testng.xml'
+    }
+
+    afterSuite { suite, result ->
+        result.exception?.printStackTrace()
+    }
+
+    testLogging {
+        // this will only change --warn flag behaviour
+        warn {
+            events = ["failed", "skipped"]
+            exceptionFormat "full"
+        }
+    }
+}
