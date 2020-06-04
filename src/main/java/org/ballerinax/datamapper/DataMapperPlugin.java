@@ -51,14 +51,14 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.List;
-import java.util.HashSet;
-import java.util.HashMap;
 import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.Stack;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Stack;
 import java.util.Set;
+import java.util.List;
+import java.util.Iterator;
+import java.util.HashSet;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -75,7 +75,10 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
     private StringBuilder functions;
     private Diagnostic.DiagnosticPosition nodePosition;
     private BLangPackage lastPackageNode;
+    private String projectSourceFolder;
     private boolean singleSourceFileFlag;
+    private JsonParser parser;
+    private String currentTypeStructure;
 
     @Override
     public void init(DiagnosticLog diagnosticLog) {
@@ -88,37 +91,47 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
 
     @Override
     public void process(PackageNode packageNode) {
-        if (((BLangPackage) packageNode).packageID.name.toString().equals(".")) {
+        if (!((BLangPackage) packageNode).packageID.name.toString().equals(".")) {
+            String pkgRoot = ((BLangPackage) packageNode).repos.resolve(((BLangPackage) packageNode).packageID).inputs.
+                    get(0).toString();
+            projectSourceFolder = pkgRoot.substring(0, pkgRoot.lastIndexOf("/"));
+            projectSourceFolder = projectSourceFolder.substring(0, projectSourceFolder.lastIndexOf("/"));
+            projectSourceFolder = projectSourceFolder.substring(0, projectSourceFolder.lastIndexOf("/"));
+
+            for (BLangTypeDefinition typeDefinition : ((BLangPackage) packageNode).typeDefinitions) {
+                if ((typeDefinition.typeNode.type.tsymbol.flags & Flags.CLIENT) == Flags.CLIENT) {
+                    try {
+                        extractFunctionCalls(typeDefinition);
+                    } catch (Exception e) {
+                        dlog.logDiagnostic(Diagnostic.Kind.ERROR, packageNode.getPosition(), e.getMessage());
+                    }
+                } else if (((BTypeSymbol) typeDefinition.symbol).kind == SymbolKind.RECORD) {
+                    StringBuilder structureStringBuilder = new StringBuilder();
+                    DataMapperStructureVisitor visitor = new DataMapperStructureVisitor(structureStringBuilder);
+                    visitor.visit(typeDefinition);
+                    String structure = structureStringBuilder.toString();
+
+                    structure = structure.replace(",}", "}");
+                    structure = structure.replace(",]", "]");
+                    structure = structure.substring(0, structure.length() - 1);
+                    String typeName = ((BRecordTypeSymbol) typeDefinition.symbol).toString();
+                    this.typeInformationMap.put(typeName, structure);
+                }
+            }
+
+            nodePosition = packageNode.getPosition();
+            lastPackageNode = (BLangPackage) packageNode;
+        } else {
             singleSourceFileFlag = true;
         }
-
-        for (BLangTypeDefinition typeDefinition : ((BLangPackage) packageNode).typeDefinitions) {
-            if ((typeDefinition.typeNode.type.tsymbol.flags & Flags.CLIENT) == Flags.CLIENT) {
-                try {
-                    extractFunctionCalls(typeDefinition);
-                } catch (Exception e) {
-                    dlog.logDiagnostic(Diagnostic.Kind.ERROR, packageNode.getPosition(), e.getMessage());
-                }
-            } else if (((BTypeSymbol)typeDefinition.symbol).kind == SymbolKind.RECORD) {
-                StringBuilder structureStringBuilder = new StringBuilder();
-                DataMapperStructureVisitor visitor = new DataMapperStructureVisitor(structureStringBuilder);
-                visitor.visit(typeDefinition);
-                String structure = structureStringBuilder.toString();
-
-                structure = structure.replace(",}", "}");
-                structure = structure.replace(",]", "]");
-                structure = structure.substring(0, structure.length() -1);
-                String typeName = ((BRecordTypeSymbol)typeDefinition.symbol).toString();
-                this.typeInformationMap.put(typeName, structure);
-            }
-        }
-
-        nodePosition = packageNode.getPosition();
-        lastPackageNode = (BLangPackage) packageNode;
     }
 
     @Override
     public void pluginExecutionCompleted(PackageID packageID) {
+        if(singleSourceFileFlag) {
+            return;
+        }
+
         Set<String> secondaryItemsSet = new HashSet<String>();
         Set<String> itemsWrittenSet = new HashSet<String>();
 
@@ -128,7 +141,7 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
                 String moduleDirectoryName = key.substring(key.indexOf("/") + 1);
                 moduleDirectoryName = moduleDirectoryName.substring(0, moduleDirectoryName.indexOf(":"));
                 String structureFileName = moduleDirectoryName + "_" + key.substring(key.lastIndexOf(":") + 1) + "_schema.json";
-                Path targetStructureFilePath = Paths.get("src", moduleDirectoryName, "resources", structureFileName);
+                Path targetStructureFilePath = Paths.get(projectSourceFolder, "src",moduleDirectoryName, "resources", structureFileName);
                 String recordEntry = entry.getValue();
 
                 Set<String> keysSet = this.typeInformationMap.keySet();
@@ -153,7 +166,7 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
             String moduleDirectoryName = key.substring(key.indexOf("/") + 1);
             moduleDirectoryName = moduleDirectoryName.substring(0, moduleDirectoryName.indexOf(":"));
             String structureFileName = moduleDirectoryName + "_" + key.substring(key.lastIndexOf(":") + 1) + "_schema.json";
-            Path targetStructureFilePath = Paths.get("src", moduleDirectoryName, "resources", structureFileName);
+            Path targetStructureFilePath = Paths.get(projectSourceFolder, "src", moduleDirectoryName, "resources", structureFileName);
             String recordEntry = this.typeInformationMap.get(key);
 
             try {
@@ -167,24 +180,18 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
         for (Map.Entry<String, String> entry : this.typeInformationMap.entrySet()) {
             String key = entry.getKey();
             String moduleName = null;
-            if (!singleSourceFileFlag) {
-                moduleName = key.substring(key.indexOf("/") + 1);
-                moduleName = moduleName.substring(0, moduleName.indexOf(":"));
-                listOfModuleNames.add(moduleName);
-            }
+            moduleName = key.substring(key.indexOf("/") + 1);
+            moduleName = moduleName.substring(0, moduleName.indexOf(":"));
+            listOfModuleNames.add(moduleName);
         }
 
         for(String moduleName : listOfModuleNames) {
             processSampleDataFiles(moduleName);
         }
-
-        if (listOfModuleNames.size() == 0) {
-            processSampleDataFilesDefault();
-        }
     }
 
-    private void processSampleDataFilesDefault() {
-        Path issueDataFilePath = Paths.get(".");
+    private void processSampleDataFiles(String moduleName) {
+        Path issueDataFilePath = Paths.get(projectSourceFolder, "src", moduleName, "resources");
         List<String> listOfSampleDataJSONFiles = null;
 
         try (Stream<Path> walk = Files.walk(issueDataFilePath)) {
@@ -192,8 +199,14 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
                     .filter(f -> f.endsWith("_data.json")).collect(Collectors.toList());
 
             for(String path : listOfSampleDataJSONFiles) {
-                if (path.contains("/src/test/resources/data")) {
+                try {
                     readDataArray(path);
+                } catch (IOException e) {
+                    JsonLocation location = parser.getCurrentLocation();
+                    BDiagnosticSource source = new BDiagnosticSource(lastPackageNode.packageID , path);
+                    DiagnosticPos position = new DiagnosticPos(source, location.getLineNr(), location.getLineNr(),
+                            location.getColumnNr(), location.getColumnNr());
+                    dlog.logDiagnostic(Diagnostic.Kind.ERROR, position, "Error: " + getCustomizedErrorMessage(e));
                 }
             }
 
@@ -201,55 +214,12 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
                 String key = entry.getKey();
                 Path targetStructureFilePath = null;
                 StringBuilder sb = new StringBuilder();
-                if (singleSourceFileFlag) {
-                    String structureFileName = key + "_data.json";
-                    targetStructureFilePath = Paths.get(".", structureFileName);
-                } else {
-                    String moduleDirectoryName = key.substring(key.indexOf("/") + 1);
-                    moduleDirectoryName = moduleDirectoryName.substring(0, moduleDirectoryName.indexOf(":"));
-                    String structureFileName = moduleDirectoryName + "_" + key.substring(key.lastIndexOf(":") + 1) + "_data.json";
-                    targetStructureFilePath = Paths.get("src", moduleDirectoryName, "resources", structureFileName);
-                }
 
-                sb.append("{\"");
-                sb.append(key);
-                sb.append("\":[");
-
-                for (Iterator<JsonNode> iterator = entry.getValue().iterator(); iterator.hasNext(); ) {
-                    JsonNode jsonObject = iterator.next();
-                    sb.append(jsonObject.get(key).toString());
-                    if (iterator.hasNext()) {
-                        sb.append(",");
-                    }
-                }
-
-                sb.append("]}");
-                Utils.writeToFile(sb.toString(), targetStructureFilePath);
-            }
-        } catch (IOException e) {
-            dlog.logDiagnostic(Diagnostic.Kind.ERROR, nodePosition, e.getMessage());
-        }
-    }
-
-    private void processSampleDataFiles(String moduleName) {
-        Path issueDataFilePath = Paths.get("src", moduleName, "resources");
-        List<String> listOfSampleDataJSONFiles = null;
-
-        try (Stream<Path> walk = Files.walk(issueDataFilePath)) {
-            listOfSampleDataJSONFiles = walk.map(x -> x.toString())
-                    .filter(f -> f.endsWith("_data.json")).collect(Collectors.toList());
-
-            for(String path : listOfSampleDataJSONFiles) {
-                readDataArray(path);
-            }
-
-            for (Map.Entry<String, ArrayList<JsonNode>> entry : this.sampleDataMap.entrySet()) {
-                String key = entry.getKey();
                 String moduleDirectoryName = key.substring(key.indexOf("/") + 1);
                 moduleDirectoryName = moduleDirectoryName.substring(0, moduleDirectoryName.indexOf(":"));
                 String structureFileName = moduleDirectoryName + "_" + key.substring(key.lastIndexOf(":") + 1) + "_data.json";
-                Path targetStructureFilePath = Paths.get("src", moduleDirectoryName, "resources", structureFileName);
-                StringBuilder sb = new StringBuilder();
+                targetStructureFilePath = Paths.get(projectSourceFolder, "src", moduleDirectoryName, "resources", structureFileName);
+
                 sb.append("{\"");
                 sb.append(key);
                 sb.append("\":[");
@@ -272,7 +242,7 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
 
     private List<String> readDataArray(String path) throws IOException {
         JsonFactory factory = new JsonFactory();
-        JsonParser parser  = factory.createParser(new FileReader(path));
+        parser  = factory.createParser(new FileReader(path));
 
         List<String> messages = new ArrayList<String>();
         String typeName = null;
@@ -287,6 +257,7 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
         Stack<JsonLocation> startLocationStack = new Stack<JsonLocation>();
         String previousTypeName = null;
         String previousName = null;
+        boolean readyToMoveUpFlag = false;
 
         while (!parser.isClosed()) {
             JsonToken jsonToken = parser.nextToken();
@@ -302,19 +273,33 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
                 case END_ARRAY:
                     break;
                 case START_OBJECT:
-                    startLocation = parser.getCurrentLocation();
-                    startLocationStack.push(startLocation);
-                    if (counter == -1) {
-                        counter = 1;
+                    if (readyToMoveUpFlag) {
+                        readyToMoveUpFlag = false;
+                        attributeCounter = 0;
+                        dataRecord = constructJSON(currentTypeStructure);
                     } else {
-                        counter++;
+                        if (startLocationStack.size() != 0) {
+                            startLocationStack.pop();
+                        }
+                        startLocation = parser.getCurrentLocation();
+                        startLocationStack.push(startLocation);
+                        if (counter == -1) {
+                            counter = 1;
+                        } else {
+                            counter++;
+                        }
                     }
+
                     break;
                 case END_OBJECT:
-                    startLocation = startLocationStack.pop();
+                    if (readyToMoveUpFlag) {
+                        counter--;
+                    }
+
                     if((expectedNumberofAttributes != attributeCounter) && (counter != 1)) {
                         endLocation = parser.getCurrentLocation();
                         BDiagnosticSource source = new BDiagnosticSource(lastPackageNode.packageID , path);
+                        startLocation = startLocationStack.pop();
                         DiagnosticPos position = new DiagnosticPos(source, startLocation.getLineNr(), endLocation.getLineNr(),
                                 startLocation.getColumnNr(), endLocation.getColumnNr());
                         dlog.logDiagnostic(Diagnostic.Kind.ERROR, position, "Error: Sample data provided for " +
@@ -324,20 +309,26 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
                             ArrayList<JsonNode> lst = sampleDataMap.getOrDefault(typeName, new ArrayList<JsonNode>());
                             lst.add(dataRecord);
                             sampleDataMap.put(typeName, lst);
-                            dataRecord = null;
                         }
                     }
-                    if (!typeStack.isEmpty()) {
-                        typeRecord = typeStack.pop();
-                        attributeCounter = attributeCounterStack.pop();
-                        typeName = previousTypeName;
-                        expectedNumberofAttributes = previousExpectedNumberofAttributes;
-                    } else {
-                        attributeCounter = 0;
-                        counter--;
-                    }
+
+                    readyToMoveUpFlag = true;
                     break;
-                    case FIELD_NAME:
+                case FIELD_NAME:
+                    if (readyToMoveUpFlag) {
+                        readyToMoveUpFlag = false;
+                        dataRecord = null;
+                        if (!typeStack.isEmpty()) {
+                            typeRecord = typeStack.pop();
+                            attributeCounter = attributeCounterStack.pop();
+                            typeName = previousTypeName;
+                            expectedNumberofAttributes = previousExpectedNumberofAttributes;
+                            currentTypeStructure = typeRecord.toString();
+                        } else {
+                            counter--;
+                        }
+                    }
+
                     final String name = parser.getCurrentName();
                     if (counter == 1) {
                         typeName = name;
@@ -367,9 +358,14 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
                         previousTypeName = typeName;
                         attributeCounter = 1;
                         typeName = result.asText();
+                        if(typeName.endsWith("[]")) {
+                            typeName = typeName.substring(0, typeName.length() - 2);
+                        }
+
                         String value = typeInformationMap.get(typeName);
                         typeRecord = constructJSON(value);
                         dataRecord = constructJSON(value);
+                        currentTypeStructure = value;
                         previousExpectedNumberofAttributes = expectedNumberofAttributes;
 
                         Iterator<String> iterator = typeRecord.get(typeName).fieldNames();
@@ -387,7 +383,7 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
                             DiagnosticPos position = new DiagnosticPos(source, location.getLineNr(), location.getLineNr(),
                                     location.getColumnNr() - (name.length() + 5), location.getColumnNr() - 3);
                             dlog.logDiagnostic(Diagnostic.Kind.ERROR, position, "Error: Type " +
-                            typeName + " does not have an attribute named " + name);
+                                    typeName + " does not have an attribute named " + name);
                         }
 
                         counter--;
@@ -398,7 +394,7 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
                     break;
                 case VALUE_STRING:
                     final String s = parser.getValueAsString();
-                    if (dataRecord != null) {
+                    if (dataRecord != null && dataRecord.get(typeName).has(previousName)) {
                         ((ObjectNode)dataRecord.get(typeName)).put(previousName, s);
                     }
                     break;
@@ -413,7 +409,8 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
                 case VALUE_NULL:
                     break;
                 default:
-                    dlog.logDiagnostic(Diagnostic.Kind.ERROR, nodePosition, "Error: Unexpected JSON token value: " + jsonToken);
+                    dlog.logDiagnostic(Diagnostic.Kind.ERROR, nodePosition, "Error: Unexpected JSON token value: "
+                            + jsonToken);
                     break;
             }
         }
@@ -503,7 +500,21 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
         String functionsJson = "{\"" + symbol.toString() + "\" : " + "[" + functions.toString() + "]}";
         functions = new StringBuilder();
         String functionsFileName = moduleName + "_" + name + "_functions.json";
-        Path targetFunctionsFilePath = Paths.get("src", moduleName, "resources", functionsFileName);
+        Path targetFunctionsFilePath = Paths.get(projectSourceFolder, moduleName, "resources", functionsFileName);
         Utils.writeToFile(functionsJson, targetFunctionsFilePath);
+    }
+
+    private String getCustomizedErrorMessage(Exception e) {
+        String errorMessage = null;
+        String originalMessage = e.getMessage();
+
+        if(originalMessage.contains("Source: java.io.FileReader@")) {
+            String[] arr = originalMessage.split("Source: java.io.FileReader@");
+            int index = arr[1].indexOf(";");
+            String endString = arr[1].substring(index);
+            errorMessage = arr[0] + "Source: java.io.FileReader@OBJECTREF" + endString;
+        }
+
+        return errorMessage;
     }
 }
