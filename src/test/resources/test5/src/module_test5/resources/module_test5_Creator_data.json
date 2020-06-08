@@ -1,5 +1,5 @@
 {
-    "miyurud/module_test5:0.1.0:Creator": [
+    "ballerinax/module_test5:0.1.0:Creator": [
         {
             "login": "github-jira",
             "resourcePath": "/github-jira",

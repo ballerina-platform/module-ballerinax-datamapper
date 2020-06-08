@@ -27,6 +27,7 @@ import org.testng.Reporter;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.Test;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -47,11 +48,11 @@ public class DataMapperPluginTest {
         Assert.assertEquals(result.getErrorCount(), 3);
         int i = 0;
         BAssertUtil.validateError(result, i++,
-                "Error: Type miyurud/module_test2:0.1.0:Issue does not have an attribute named id2", 4, 13);
+                "Error: Type ballerinax/module_test2:0.1.0:Issue does not have an attribute named id2", 4, 13);
         BAssertUtil.validateError(result, i++,
-                "Error: Type miyurud/module_test2:0.1.0:Creator does not have an attribute named resourcePath5", 11, 17);
+                "Error: Type ballerinax/module_test2:0.1.0:Creator does not have an attribute named resourcePath5", 11, 17);
         BAssertUtil.validateError(result, i,
-                "Error: Type miyurud/module_test2:0.1.0:Issue does not have an attribute named bodyText3", 25, 13);
+                "Error: Type ballerinax/module_test2:0.1.0:Issue does not have an attribute named bodyText3", 25, 13);
     }
 
     @Test
@@ -61,7 +62,7 @@ public class DataMapperPluginTest {
         Reporter.log(result.toString(), true);
         Assert.assertEquals(result.getErrorCount(), 1);
         BAssertUtil.validateError(result, 0,
-                "Error: Sample data provided for miyurud/module_test3:0.1.0:Issue is different in terms of attributes count", 9, 24);
+                "Error: Sample data provided for ballerinax/module_test3:0.1.0:Issue is different in terms of attributes count", 9, 24);
     }
 
     @Test
@@ -70,7 +71,7 @@ public class DataMapperPluginTest {
                 CompilerPhase.COMPILER_PLUGIN);
         Assert.assertEquals(result.getErrorCount(), 1);
         BAssertUtil.validateError(result, 0,
-                "Error: Sample data provided for miyurud/module_test4:0.1.0:Issue is different in terms of attributes count", 9, 24);
+                "Error: Sample data provided for ballerinax/module_test4:0.1.0:Issue is different in terms of attributes count", 9, 24);
     }
 
     @Test
@@ -86,9 +87,9 @@ public class DataMapperPluginTest {
                 CompilerPhase.COMPILER_PLUGIN);
                 Assert.assertEquals(result.getErrorCount(), 2);
         BAssertUtil.validateError(result, 0,
-                "Error: Type miyurud/module_test6:0.1.0:Creator does not have an attribute named login2", 4, 13);
+                "Error: Type ballerinax/module_test6:0.1.0:Creator does not have an attribute named login2", 4, 13);
         BAssertUtil.validateError(result, 1,
-                "Error: Type miyurud/module_test6:0.1.0:Creator does not have an attribute named avatarUrl3", 7, 13);
+                "Error: Type ballerinax/module_test6:0.1.0:Creator does not have an attribute named avatarUrl3", 7, 13);
     }
 
     @Test
@@ -123,16 +124,36 @@ public class DataMapperPluginTest {
         Assert.assertEquals(result.getErrorCount(), 0);
     }
 
+    @Test
+    public void testHappyPathSchemaExtraction() {
+        CompileResult result = BCompileUtil.compile("src/test/resources/test11", "module_test11",
+                CompilerPhase.COMPILER_PLUGIN);
+        Reporter.log(result.toString(), true);
+        Assert.assertEquals(result.getErrorCount(), 0);
+        File fileAssigneeSchema = new File("src/test/resources/test11/src/module_test11/resources/module_test11_Assignee_schema.json");
+        Assert.assertEquals(fileAssigneeSchema.exists(), true);
+        File fileCreatorSchema = new File("src/test/resources/test11/src/module_test11/resources/module_test11_Creator_schema.json");
+        Assert.assertEquals(fileCreatorSchema.exists(), true);
+        File fileIssueSchema = new File("src/test/resources/test11/src/module_test11/resources/module_test11_Issue_schema.json");
+        Assert.assertEquals(fileIssueSchema.exists(), true);
+        File fileLabelSchema = new File("src/test/resources/test11/src/module_test11/resources/module_test11_Label_schema.json");
+        Assert.assertEquals(fileLabelSchema.exists(), true);
+    }
+
     @AfterClass
     public void tearDown() throws IOException {
         //Cleanup the test projects if they already have generated json files
         try {
-            Files.deleteIfExists(Paths.get("src/test/resources/test1/src/module_test1/resources/module_test1_Creator_data.json"));
             Files.deleteIfExists(Paths.get("src/test/resources/test2/src/module_test2/resources/module_test2_Creator_data.json"));
             Files.deleteIfExists(Paths.get("src/test/resources/test3/src/module_test3/resources/module_test3_Creator_data.json"));
             Files.deleteIfExists(Paths.get("src/test/resources/test4/src/module_test4/resources/module_test4_Creator_data.json"));
             Files.deleteIfExists(Paths.get("src/test/resources/test7/src/module_test7/resources/module_test7_Creator_data.json"));
             Files.deleteIfExists(Paths.get("src/test/resources/test10/src/module_test10/resources/module_test10_Label_data.json"));
+            Files.deleteIfExists(Paths.get("src/test/resources/test11/src/module_test11/resources/module_test11_Assignee_schema.json"));
+            Files.deleteIfExists(Paths.get("src/test/resources/test11/src/module_test11/resources/module_test11_Creator_schema.json"));
+            Files.deleteIfExists(Paths.get("src/test/resources/test11/src/module_test11/resources/module_test11_Issue_schema.json"));
+            Files.deleteIfExists(Paths.get("src/test/resources/test11/src/module_test11/resources/module_test11_Label_schema.json"));
+            Files.deleteIfExists(Paths.get("src/test/resources/test11/src/module_test11/resources/module_test11_Client_functions.json"));
         } catch (IOException e) {
             Reporter.log("Error : " + e.getMessage(), true);
             throw e;

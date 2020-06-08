@@ -141,7 +141,7 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
                 String moduleDirectoryName = key.substring(key.indexOf("/") + 1);
                 moduleDirectoryName = moduleDirectoryName.substring(0, moduleDirectoryName.indexOf(":"));
                 String structureFileName = moduleDirectoryName + "_" + key.substring(key.lastIndexOf(":") + 1) + "_schema.json";
-                Path targetStructureFilePath = Paths.get(projectSourceFolder, "src",moduleDirectoryName, "resources", structureFileName);
+                Path targetStructureFilePath = Paths.get(projectSourceFolder, "src", moduleDirectoryName, "resources", structureFileName);
                 String recordEntry = entry.getValue();
 
                 Set<String> keysSet = this.typeInformationMap.keySet();
@@ -248,8 +248,8 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
         String typeName = null;
         JsonNode typeRecord = null;
         JsonNode dataRecord = null;
-        int expectedNumberofAttributes = 0;
-        int previousExpectedNumberofAttributes = 0;
+        int expectedNumberOfAttributes = 0;
+        int previousExpectedNumberOfAttributes = 0;
         int attributeCounter = 0;
         long counter = -1;
         Stack<JsonNode> typeStack = new Stack<JsonNode>();
@@ -296,7 +296,7 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
                         counter--;
                     }
 
-                    if((expectedNumberofAttributes != attributeCounter) && (counter != 1)) {
+                    if((expectedNumberOfAttributes != attributeCounter) && (counter != 1)) {
                         endLocation = parser.getCurrentLocation();
                         BDiagnosticSource source = new BDiagnosticSource(lastPackageNode.packageID , path);
                         startLocation = startLocationStack.pop();
@@ -322,7 +322,7 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
                             typeRecord = typeStack.pop();
                             attributeCounter = attributeCounterStack.pop();
                             typeName = previousTypeName;
-                            expectedNumberofAttributes = previousExpectedNumberofAttributes;
+                            expectedNumberOfAttributes = previousExpectedNumberOfAttributes;
                             currentTypeStructure = typeRecord.toString();
                         } else {
                             counter--;
@@ -335,12 +335,11 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
                         String value = typeInformationMap.get(name);
                         typeRecord = constructJSON(value);
                         Iterator<String> iterator = typeRecord.get(name).fieldNames();
-                        int attributeCount = 0;
+                        expectedNumberOfAttributes = 0;
                         while (iterator.hasNext()) {
-                            attributeCount++;
+                            expectedNumberOfAttributes++;
                             iterator.next();
                         }
-                        expectedNumberofAttributes = attributeCount;
                     } else if (counter == 2) {
                         if(typeRecord.get(typeName).get(name) == null) {
                             JsonLocation location = parser.getCurrentLocation();
@@ -366,7 +365,7 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
                         typeRecord = constructJSON(value);
                         dataRecord = constructJSON(value);
                         currentTypeStructure = value;
-                        previousExpectedNumberofAttributes = expectedNumberofAttributes;
+                        previousExpectedNumberOfAttributes = expectedNumberOfAttributes;
 
                         Iterator<String> iterator = typeRecord.get(typeName).fieldNames();
                         int attributeCount = 0;
@@ -375,7 +374,7 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
                             iterator.next();
                         }
 
-                        expectedNumberofAttributes = attributeCount;
+                        expectedNumberOfAttributes = attributeCount;
 
                         if(!typeRecord.get(typeName).has(name)) {
                             JsonLocation location = parser.getCurrentLocation();
@@ -500,7 +499,7 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
         String functionsJson = "{\"" + symbol.toString() + "\" : " + "[" + functions.toString() + "]}";
         functions = new StringBuilder();
         String functionsFileName = moduleName + "_" + name + "_functions.json";
-        Path targetFunctionsFilePath = Paths.get(projectSourceFolder, moduleName, "resources", functionsFileName);
+        Path targetFunctionsFilePath = Paths.get(projectSourceFolder, "src", moduleName, "resources", functionsFileName);
         Utils.writeToFile(functionsJson, targetFunctionsFilePath);
     }
 
