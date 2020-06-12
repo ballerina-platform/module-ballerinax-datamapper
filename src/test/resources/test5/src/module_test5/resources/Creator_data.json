@@ -1,0 +1,16 @@
+{
+    "ballerinax/module_test6:0.1.0:Creator": [
+        {
+            "login": "github-jira",
+            "resourcePath": "/github-jira",
+            "url": "https://github.com/github-jira",
+            "avatarUrl": "https://avatars1.githubusercontent.com/u/63409295?v=4"
+        },
+        {
+            "login": "github-jira",
+            "resourcePath": "/github-jira",
+            "url": "https://github.com/github-jira",
+            "avatarUrl": "https://avatars1.githubusercontent.com/u/63409295?v=5"
+        }
+    ]
+}
