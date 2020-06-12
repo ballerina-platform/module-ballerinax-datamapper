@@ -18,9 +18,7 @@
 
 package org.ballerinax.datamapper;
 
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonLocation;
-import com.fasterxml.jackson.core.JsonToken;
+import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -30,6 +28,7 @@ import org.ballerinalang.model.elements.PackageID;
 import org.ballerinalang.model.symbols.SymbolKind;
 import org.ballerinalang.model.tree.PackageNode;
 import org.ballerinalang.model.tree.NodeKind;
+import org.ballerinalang.model.tree.TopLevelNode;
 import org.ballerinalang.util.diagnostic.Diagnostic;
 import org.ballerinalang.util.diagnostic.DiagnosticLog;
 import org.ballerinax.datamapper.util.Utils;
@@ -53,16 +52,15 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
-import java.util.Stack;
 import java.util.Set;
 import java.util.List;
+import java.util.Stack;
+import java.util.LinkedHashMap;
 import java.util.Iterator;
-import java.util.HashSet;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import com.fasterxml.jackson.core.JsonParser;
 
 /**
  * Compiler extension to generate sample JSON files for data mapper
@@ -76,7 +74,8 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
     private Diagnostic.DiagnosticPosition nodePosition;
     private BLangPackage lastPackageNode;
     private String projectSourceFolder;
-    private boolean singleSourceFileFlag;
+    private boolean clientFlag;
+    private boolean noFunctionsFlag;
     private JsonParser parser;
     private String currentTypeStructure;
 
@@ -91,7 +90,16 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
 
     @Override
     public void process(PackageNode packageNode) {
-        if (!((BLangPackage) packageNode).packageID.name.toString().equals(".")) {
+        Iterator<TopLevelNode> iterator = ((BLangPackage) packageNode).topLevelNodes.stream().filter(topLevelNodes -> topLevelNodes instanceof BLangTypeDefinition).iterator();
+        while (iterator.hasNext()) {
+            TopLevelNode item = iterator.next();
+            if((((BLangTypeDefinition) item).getTypeNode().type.flags & Flags.CLIENT) == Flags.CLIENT) {
+                clientFlag = true;
+                break;
+            }
+        }
+
+        if(clientFlag) {
             String pkgRoot = ((BLangPackage) packageNode).repos.resolve(((BLangPackage) packageNode).packageID).inputs.
                     get(0).toString();
             projectSourceFolder = pkgRoot.substring(0, pkgRoot.lastIndexOf("/"));
@@ -106,29 +114,30 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
                         dlog.logDiagnostic(Diagnostic.Kind.ERROR, packageNode.getPosition(), e.getMessage());
                     }
                 } else if (((BTypeSymbol) typeDefinition.symbol).kind == SymbolKind.RECORD) {
-                    StringBuilder structureStringBuilder = new StringBuilder();
-                    DataMapperStructureVisitor visitor = new DataMapperStructureVisitor(structureStringBuilder);
+                    Map<String, String> structureMap = new LinkedHashMap<String, String>();
+                    DataMapperStructureVisitor visitor = new DataMapperStructureVisitor(structureMap);
                     visitor.visit(typeDefinition);
-                    String structure = structureStringBuilder.toString();
-
-                    structure = structure.replace(",}", "}");
-                    structure = structure.replace(",]", "]");
-                    structure = structure.substring(0, structure.length() - 1);
                     String typeName = ((BRecordTypeSymbol) typeDefinition.symbol).toString();
-                    this.typeInformationMap.put(typeName, structure);
+                    String serialized = null;
+                    try {
+                        serialized = new ObjectMapper().writeValueAsString(structureMap);
+                        serialized = "{\"" + typeName + "\":" + serialized + "}";
+                    } catch (JsonProcessingException e) {
+                        dlog.logDiagnostic(Diagnostic.Kind.ERROR, packageNode.getPosition(), e.getMessage());
+                    }
+                    structureMap.clear();
+                    this.typeInformationMap.put(typeName, serialized);
                 }
             }
 
             nodePosition = packageNode.getPosition();
             lastPackageNode = (BLangPackage) packageNode;
-        } else {
-            singleSourceFileFlag = true;
         }
     }
 
     @Override
     public void pluginExecutionCompleted(PackageID packageID) {
-        if(singleSourceFileFlag) {
+        if(!clientFlag || noFunctionsFlag) {
             return;
         }
 
@@ -140,7 +149,7 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
             if (this.typeSet.contains(key)) {
                 String moduleDirectoryName = key.substring(key.indexOf("/") + 1);
                 moduleDirectoryName = moduleDirectoryName.substring(0, moduleDirectoryName.indexOf(":"));
-                String structureFileName = moduleDirectoryName + "_" + key.substring(key.lastIndexOf(":") + 1) + "_schema.json";
+                String structureFileName = key.substring(key.lastIndexOf(":") + 1) + "_schema.json";
                 Path targetStructureFilePath = Paths.get(projectSourceFolder, "src", moduleDirectoryName, "resources", structureFileName);
                 String recordEntry = entry.getValue();
 
@@ -165,7 +174,7 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
         for (String key : secondaryItemsSet) {
             String moduleDirectoryName = key.substring(key.indexOf("/") + 1);
             moduleDirectoryName = moduleDirectoryName.substring(0, moduleDirectoryName.indexOf(":"));
-            String structureFileName = moduleDirectoryName + "_" + key.substring(key.lastIndexOf(":") + 1) + "_schema.json";
+            String structureFileName = key.substring(key.lastIndexOf(":") + 1) + "_schema.json";
             Path targetStructureFilePath = Paths.get(projectSourceFolder, "src", moduleDirectoryName, "resources", structureFileName);
             String recordEntry = this.typeInformationMap.get(key);
 
@@ -217,7 +226,7 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
 
                 String moduleDirectoryName = key.substring(key.indexOf("/") + 1);
                 moduleDirectoryName = moduleDirectoryName.substring(0, moduleDirectoryName.indexOf(":"));
-                String structureFileName = moduleDirectoryName + "_" + key.substring(key.lastIndexOf(":") + 1) + "_data.json";
+                String structureFileName = key.substring(key.lastIndexOf(":") + 1) + "_data.json";
                 targetStructureFilePath = Paths.get(projectSourceFolder, "src", moduleDirectoryName, "resources", structureFileName);
 
                 sb.append("{\"");
@@ -258,8 +267,9 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
         String previousTypeName = null;
         String previousName = null;
         boolean readyToMoveUpFlag = false;
+        boolean errorFlag = false;
 
-        while (!parser.isClosed()) {
+        while (!parser.isClosed() && !errorFlag) {
             JsonToken jsonToken = parser.nextToken();
             if (jsonToken == null) {
                 break;
@@ -333,6 +343,11 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
                     if (counter == 1) {
                         typeName = name;
                         String value = typeInformationMap.get(name);
+                        if(value == null) {
+                            errorFlag = true;
+                            continue;
+                        }
+
                         typeRecord = constructJSON(value);
                         Iterator<String> iterator = typeRecord.get(name).fieldNames();
                         expectedNumberOfAttributes = 0;
@@ -424,10 +439,11 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
     }
 
     private void extractFunctionCalls(BLangTypeDefinition typeDefinition) throws IOException {
+        noFunctionsFlag = false;
         String name = typeDefinition.name.toString();
         Iterator<BLangFunction> iterator = ((BLangObjectTypeNode) typeDefinition.typeNode).functions.iterator();
-        boolean flag = iterator.hasNext();
-        while (flag) {
+        boolean flag = false;
+        while (iterator.hasNext()) {
             BLangFunction function =  iterator.next();
             if (function.flagSet.contains(Flag.REMOTE)) {
                 functions.append("{\"function\":{\"name\":\"" + function.name + "\",\"requiredParams\":[");
@@ -479,28 +495,37 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
                 } else {
                     functions.append(function.returnTypeNode.type.tsymbol);
                 }
-            }
+                flag = iterator.hasNext();
 
-            flag = iterator.hasNext();
-
-            if (flag) {
-                functions.append("\"}},");
-            } else {
-                functions.append("\"}}");
+                if (flag) {
+                    functions.append("\"}},");
+                } else {
+                    functions.append("\"}}");
+                }
             }
         }
 
-        String symbol = String.valueOf(((BLangTypeDefinition) typeDefinition).symbol);
-        String moduleName = symbol.substring(symbol.indexOf("/") + 1);
-        if (moduleName.contains(":")) {
-            moduleName = moduleName.substring(0, moduleName.indexOf(":"));
-        }
+        if(functions.length() != 0) {
+            String symbol = String.valueOf(((BLangTypeDefinition) typeDefinition).symbol);
+            String moduleName = symbol.substring(symbol.indexOf("/") + 1);
+            if (moduleName.contains(":")) {
+                moduleName = moduleName.substring(0, moduleName.indexOf(":"));
+            }
 
-        String functionsJson = "{\"" + symbol.toString() + "\" : " + "[" + functions.toString() + "]}";
-        functions = new StringBuilder();
-        String functionsFileName = moduleName + "_" + name + "_functions.json";
-        Path targetFunctionsFilePath = Paths.get(projectSourceFolder, "src", moduleName, "resources", functionsFileName);
-        Utils.writeToFile(functionsJson, targetFunctionsFilePath);
+            String functionsJson = functions.toString();
+
+            if(functionsJson.endsWith(",")) {
+                functionsJson = functionsJson.substring(0, functionsJson.lastIndexOf(","));
+            }
+
+            functionsJson = "{\"" + symbol.toString() + "\" : " + "[" + functionsJson + "]}";
+            functions = new StringBuilder();
+            String functionsFileName = name + "_functions.json";
+            Path targetFunctionsFilePath = Paths.get(projectSourceFolder, "src", moduleName, "resources", functionsFileName);
+            Utils.writeToFile(functionsJson, targetFunctionsFilePath);
+        } else {
+            noFunctionsFlag = true;
+        }
     }
 
     private String getCustomizedErrorMessage(Exception e) {

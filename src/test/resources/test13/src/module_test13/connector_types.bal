@@ -14,22 +14,6 @@
 // specific language governing permissions and limitations
 // under the License.
 
-public type Issue record {|
-    string id = "";
-    string? bodyText = "";
-    string? closed = "";
-    string? closedAt = "";
-    string createdAt = "";
-    Creator author = {};
-    Label[] labels = [];
-    int number = 0;
-    string state = "";
-    string title = "";
-    string? updatedAt = "";
-    string url = "";
-    Assignee[] assignees = [];
-|};
-
 public type Assignee record {|
     string id = "";
     string login = "";

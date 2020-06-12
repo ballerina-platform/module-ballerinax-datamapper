@@ -29,28 +29,24 @@ import org.wso2.ballerinalang.compiler.tree.expressions.BLangExpression;
 import org.wso2.ballerinalang.compiler.tree.expressions.BLangListConstructorExpr;
 import org.wso2.ballerinalang.compiler.tree.expressions.BLangLiteral;
 import org.wso2.ballerinalang.compiler.tree.expressions.BLangNamedArgsExpression;
-import org.wso2.ballerinalang.compiler.tree.expressions.BLangNumericLiteral;
 import org.wso2.ballerinalang.compiler.tree.expressions.BLangRecordLiteral;
-import org.wso2.ballerinalang.compiler.tree.expressions.BLangSimpleVarRef;
 import org.wso2.ballerinalang.compiler.tree.expressions.BLangTypeInit;
 import org.wso2.ballerinalang.compiler.tree.types.BLangRecordTypeNode;
+
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 public class DataMapperStructureVisitor extends BLangNodeVisitor {
-    private StringBuilder structureStringBuilder;
+    private Map<String, String> structureMap;
 
-    public DataMapperStructureVisitor(StringBuilder structure){
-        structureStringBuilder = structure;
+    public DataMapperStructureVisitor(Map structure){
+        structureMap = structure;
     }
 
     @Override
     public void visit(BLangTypeDefinition typeDefinition) {
-        structureStringBuilder.append("{");
-        structureStringBuilder.append("\"");
-        structureStringBuilder.append(typeDefinition.typeNode.type.tsymbol.toString());
-        structureStringBuilder.append("\": {");
         for (Iterator<BLangSimpleVariable> iterator = ((BLangRecordTypeNode) typeDefinition.typeNode).
             fields.iterator(); iterator.hasNext(); ) {
             BLangSimpleVariable field = iterator.next();
@@ -58,48 +54,32 @@ public class DataMapperStructureVisitor extends BLangNodeVisitor {
             if (field.getKind() == NodeKind.VARIABLE) {
                 field.accept(this);
             }
-
-            if (iterator.hasNext()) {
-                structureStringBuilder.append(",");
-            }
         }
-        structureStringBuilder.append("}} ");
     }
 
     @Override
     public void visit(BLangTypeInit varRefExpr) {
-        structureStringBuilder.append("{");
         List<BLangExpression> exprList = varRefExpr.argsExpr;
         ArrayList<BVarSymbol> list = (ArrayList<BVarSymbol>) ((BObjectTypeSymbol) varRefExpr.type.tsymbol).
                                     initializerFunc.symbol.params;
         int count = 0;
         for (Iterator<BLangExpression> iterator = exprList.iterator(); iterator.hasNext(); ) {
             BLangExpression expr = iterator.next();
-            structureStringBuilder.append("\"");
             if (expr.getKind() == NodeKind.LITERAL) {
-                structureStringBuilder.append(list.get(count));
-                structureStringBuilder.append("\":");
                 expr.accept(this);
             } else if (expr.getKind() == NodeKind.NAMED_ARGS_EXPR) {
                 expr.accept(this);
             } else if (expr.getKind() == NodeKind.RECORD_LITERAL_EXPR) {
-                structureStringBuilder.append(list.get(count));
-                structureStringBuilder.append("\":");
                 expr.accept(this);
             } else if (expr.getKind() == NodeKind.LIST_CONSTRUCTOR_EXPR) {
-                structureStringBuilder.append(list.get(count));
-                structureStringBuilder.append("\":");
                 expr.accept(this);
             }
             count += 1;
         }
-        structureStringBuilder.append("} ");
     }
 
     @Override
     public void visit(BLangNamedArgsExpression varRefExpr) {
-        structureStringBuilder.append(varRefExpr.name);
-        structureStringBuilder.append("\":");
         BLangExpression expr = (BLangExpression) varRefExpr.getExpression();
         if (expr.getKind() == NodeKind.LITERAL) {
             expr.accept(this);
@@ -111,19 +91,8 @@ public class DataMapperStructureVisitor extends BLangNodeVisitor {
     }
 
     @Override
-    public void visit(BLangSimpleVarRef varRefExpr) {
-        structureStringBuilder.append("\"");
-        structureStringBuilder.append(varRefExpr.type);
-        structureStringBuilder.append("\"");
-        structureStringBuilder.append(",");
-    }
-
-    @Override
     public void visit(BLangListConstructorExpr listConstructorExpr) {
         List<BLangExpression> exprList = listConstructorExpr.getExpressions();
-        structureStringBuilder.append("\"");
-        structureStringBuilder.append(listConstructorExpr.type);
-        structureStringBuilder.append("\",");
 
         for (BLangExpression expr : exprList) {
             if (expr.getKind() == NodeKind.RECORD_LITERAL_EXPR) {
@@ -137,34 +106,11 @@ public class DataMapperStructureVisitor extends BLangNodeVisitor {
 
     @Override
     public void visit(BLangSimpleVariable varNode) {
-        structureStringBuilder.append("\"");
-        structureStringBuilder.append(varNode.symbol.name);
-        structureStringBuilder.append("\":\"");
-        structureStringBuilder.append(varNode.symbol.type);
-        structureStringBuilder.append("\"");
-    }
-
-    @Override
-    public void visit(BLangLiteral literalExpr) {
-        structureStringBuilder.append("\"");
-        structureStringBuilder.append(literalExpr.type);
-        structureStringBuilder.append("\"");
-        structureStringBuilder.append(",");
-    }
-
-    @Override
-    public void visit(BLangNumericLiteral literalExpr) {
-        structureStringBuilder.append("\"");
-        structureStringBuilder.append(literalExpr.type);
-        structureStringBuilder.append("\"");
-        structureStringBuilder.append(",");
+        structureMap.put(varNode.symbol.name.toString(), varNode.symbol.type.toString());
     }
 
     @Override
     public void visit(BLangRecordLiteral.BLangRecordKeyValueField recordKeyValue) {
-        structureStringBuilder.append("\"");
-        structureStringBuilder.append(recordKeyValue.getKey());
-        structureStringBuilder.append("\":");
         if (recordKeyValue.valueExpr.getKind() == NodeKind.LITERAL) {
             ((BLangLiteral)recordKeyValue.valueExpr).accept(this);
         } else if (recordKeyValue.valueExpr.getKind() == NodeKind.RECORD_LITERAL_EXPR) {
@@ -180,14 +126,6 @@ public class DataMapperStructureVisitor extends BLangNodeVisitor {
 
     @Override
     public void visit(BLangRecordLiteral recordLiteral) {
-        if (recordLiteral.fields.size() == 0) {
-            structureStringBuilder.append("\"");
-            structureStringBuilder.append(recordLiteral.type);
-            structureStringBuilder.append("\",");
-        } else {
-            structureStringBuilder.append("{");
-        }
-
         for (Iterator<RecordLiteralNode.RecordField> iterator = recordLiteral.fields.iterator(); iterator.hasNext(); ) {
             RecordLiteralNode.RecordField field = iterator.next();
 
@@ -196,10 +134,6 @@ public class DataMapperStructureVisitor extends BLangNodeVisitor {
             } else if (field.getKind() == NodeKind.LIST_CONSTRUCTOR_EXPR) {
                 ((BLangListConstructorExpr) field).accept(this);
             }
-        }
-
-        if (recordLiteral.fields.size() != 0) {
-            structureStringBuilder.append("},");
         }
     }
 }

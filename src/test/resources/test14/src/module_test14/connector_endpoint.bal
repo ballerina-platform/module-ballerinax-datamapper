@@ -13,8 +13,15 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-public type Client client object {
+
+public type Client1 client object {
     public remote function createIssue()  returns Issue|error {
+        return {};
+    }
+};
+
+public type Client2 client object {
+    public remote function getIssue()  returns Issue|error {
         return {};
     }
 };

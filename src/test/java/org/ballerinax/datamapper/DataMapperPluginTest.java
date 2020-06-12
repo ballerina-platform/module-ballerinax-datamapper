@@ -37,7 +37,16 @@ public class DataMapperPluginTest {
     public void testHappyPath() {
         CompileResult result = BCompileUtil.compile("src/test/resources/test1", "module_test1",
                 CompilerPhase.COMPILER_PLUGIN);
-        Reporter.log(result.toString(), true);
+        File jsonFile = new File("src/test/resources/test1/src/module_test1/resources/Assignee_schema.json");
+        Assert.assertEquals(jsonFile.exists(), true);
+        jsonFile = new File("src/test/resources/test1/src/module_test1/resources/Client_functions.json");
+        Assert.assertEquals(jsonFile.exists(), true);
+        jsonFile = new File("src/test/resources/test1/src/module_test1/resources/Creator_schema.json");
+        Assert.assertEquals(jsonFile.exists(), true);
+        jsonFile = new File("src/test/resources/test1/src/module_test1/resources/Issue_schema.json");
+        Assert.assertEquals(jsonFile.exists(), true);
+        jsonFile = new File("src/test/resources/test1/src/module_test1/resources/Label_schema.json");
+        Assert.assertEquals(jsonFile.exists(), true);
         Assert.assertEquals(result.getErrorCount(), 0);
     }
 
@@ -59,7 +68,6 @@ public class DataMapperPluginTest {
     public void testErrorNegativeMissingOneField() {
         CompileResult result = BCompileUtil.compile("src/test/resources/test3", "module_test3",
                 CompilerPhase.COMPILER_PLUGIN);
-        Reporter.log(result.toString(), true);
         Assert.assertEquals(result.getErrorCount(), 1);
         BAssertUtil.validateError(result, 0,
                 "Error: Sample data provided for ballerinax/module_test3:0.1.0:Issue is different in terms of attributes count", 9, 24);
@@ -97,6 +105,16 @@ public class DataMapperPluginTest {
         CompileResult result = BCompileUtil.compile("src/test/resources/test7", "module_test7",
                 CompilerPhase.COMPILER_PLUGIN);
         Assert.assertEquals(result.getErrorCount(), 0);
+        File jsonFile = new File("src/test/resources/test7/src/module_test7/resources/Assignee_schema.json");
+        Assert.assertEquals(jsonFile.exists(), true);
+        jsonFile = new File("src/test/resources/test7/src/module_test7/resources/Creator_schema.json");
+        Assert.assertEquals(jsonFile.exists(), true);
+        jsonFile = new File("src/test/resources/test7/src/module_test7/resources/Issue_schema.json");
+        Assert.assertEquals(jsonFile.exists(), true);
+        jsonFile = new File("src/test/resources/test7/src/module_test7/resources/Label_schema.json");
+        Assert.assertEquals(jsonFile.exists(), true);
+        jsonFile = new File("src/test/resources/test7/src/module_test7/resources/Client_functions.json");
+        Assert.assertEquals(jsonFile.exists(), true);
     }
 
     @Test
@@ -109,7 +127,6 @@ public class DataMapperPluginTest {
     public void testErrorNegativeMalformedDataJSON() {
         CompileResult result = BCompileUtil.compile("src/test/resources/test9", "module_test9",
                 CompilerPhase.COMPILER_PLUGIN);
-        Reporter.log(result.toString(), true);
         Assert.assertEquals(result.getErrorCount(), 1);
         BAssertUtil.validateError(result, 0,
                 "Error: Unexpected character (':' (code 58)): was expecting double-quote to start field name\n" +
@@ -120,40 +137,147 @@ public class DataMapperPluginTest {
     public void testHappyPathWithPropertyHavingArray() {
         CompileResult result = BCompileUtil.compile("src/test/resources/test10", "module_test10",
                 CompilerPhase.COMPILER_PLUGIN);
-        Reporter.log(result.toString(), true);
         Assert.assertEquals(result.getErrorCount(), 0);
+        File jsonFile = new File("src/test/resources/test10/src/module_test10/resources/Label_data.json");
+        Assert.assertEquals(jsonFile.exists(), true);
+        jsonFile = new File("src/test/resources/test10/src/module_test10/resources/Assignee_schema.json");
+        Assert.assertEquals(jsonFile.exists(), true);
+        jsonFile = new File("src/test/resources/test10/src/module_test10/resources/Creator_schema.json");
+        Assert.assertEquals(jsonFile.exists(), true);
+        jsonFile = new File("src/test/resources/test10/src/module_test10/resources/Issue_schema.json");
+        Assert.assertEquals(jsonFile.exists(), true);
+        jsonFile = new File("src/test/resources/test10/src/module_test10/resources/Label_schema.json");
+        Assert.assertEquals(jsonFile.exists(), true);
+        jsonFile = new File("src/test/resources/test10/src/module_test10/resources/Client_functions.json");
+        Assert.assertEquals(jsonFile.exists(), true);
     }
 
     @Test
     public void testHappyPathSchemaExtraction() {
         CompileResult result = BCompileUtil.compile("src/test/resources/test11", "module_test11",
                 CompilerPhase.COMPILER_PLUGIN);
-        Reporter.log(result.toString(), true);
         Assert.assertEquals(result.getErrorCount(), 0);
-        File fileAssigneeSchema = new File("src/test/resources/test11/src/module_test11/resources/module_test11_Assignee_schema.json");
-        Assert.assertEquals(fileAssigneeSchema.exists(), true);
-        File fileCreatorSchema = new File("src/test/resources/test11/src/module_test11/resources/module_test11_Creator_schema.json");
-        Assert.assertEquals(fileCreatorSchema.exists(), true);
-        File fileIssueSchema = new File("src/test/resources/test11/src/module_test11/resources/module_test11_Issue_schema.json");
-        Assert.assertEquals(fileIssueSchema.exists(), true);
-        File fileLabelSchema = new File("src/test/resources/test11/src/module_test11/resources/module_test11_Label_schema.json");
-        Assert.assertEquals(fileLabelSchema.exists(), true);
+        File jsonFile = new File("src/test/resources/test11/src/module_test11/resources/Assignee_schema.json");
+        Assert.assertEquals(jsonFile.exists(), true);
+        jsonFile = new File("src/test/resources/test11/src/module_test11/resources/Creator_schema.json");
+        Assert.assertEquals(jsonFile.exists(), true);
+        jsonFile = new File("src/test/resources/test11/src/module_test11/resources/Issue_schema.json");
+        Assert.assertEquals(jsonFile.exists(), true);
+        jsonFile = new File("src/test/resources/test11/src/module_test11/resources/Label_schema.json");
+        Assert.assertEquals(jsonFile.exists(), true);
+    }
+
+    @Test
+    public void testFunctionWithNoAssociatedRecordTypes() {
+        CompileResult result = BCompileUtil.compile("src/test/resources/test12", "module_test12",
+                CompilerPhase.COMPILER_PLUGIN);
+        Assert.assertEquals(result.getErrorCount(), 0);
+    }
+
+    @Test
+    public void testDataJSONsWrittenWithoutReferenceToAnyConnectorTypes() {
+        CompileResult result = BCompileUtil.compile("src/test/resources/test13", "module_test13",
+                CompilerPhase.COMPILER_PLUGIN);
+        Assert.assertEquals(result.getErrorCount(), 0);
+    }
+
+    @Test
+    public void testHappyPathMultipleClients() {
+        CompileResult result = BCompileUtil.compile("src/test/resources/test14", "module_test14",
+                CompilerPhase.COMPILER_PLUGIN);
+        Assert.assertEquals(result.getErrorCount(), 0);
+        File jsonFile = new File("src/test/resources/test14/src/module_test14/resources/Assignee_schema.json");
+        Assert.assertEquals(jsonFile.exists(), true);
+        jsonFile = new File("src/test/resources/test14/src/module_test14/resources/Creator_schema.json");
+        Assert.assertEquals(jsonFile.exists(), true);
+        jsonFile = new File("src/test/resources/test14/src/module_test14/resources/Issue_schema.json");
+        Assert.assertEquals(jsonFile.exists(), true);
+        jsonFile = new File("src/test/resources/test14/src/module_test14/resources/Label_schema.json");
+        Assert.assertEquals(jsonFile.exists(), true);
+        jsonFile = new File("src/test/resources/test14/src/module_test14/resources/Client1_functions.json");
+        Assert.assertEquals(jsonFile.exists(), true);
+        jsonFile = new File("src/test/resources/test14/src/module_test14/resources/Client2_functions.json");
+        Assert.assertEquals(jsonFile.exists(), true);
     }
 
     @AfterClass
     public void tearDown() throws IOException {
         //Cleanup the test projects if they already have generated json files
         try {
-            Files.deleteIfExists(Paths.get("src/test/resources/test2/src/module_test2/resources/module_test2_Creator_data.json"));
-            Files.deleteIfExists(Paths.get("src/test/resources/test3/src/module_test3/resources/module_test3_Creator_data.json"));
-            Files.deleteIfExists(Paths.get("src/test/resources/test4/src/module_test4/resources/module_test4_Creator_data.json"));
-            Files.deleteIfExists(Paths.get("src/test/resources/test7/src/module_test7/resources/module_test7_Creator_data.json"));
-            Files.deleteIfExists(Paths.get("src/test/resources/test10/src/module_test10/resources/module_test10_Label_data.json"));
-            Files.deleteIfExists(Paths.get("src/test/resources/test11/src/module_test11/resources/module_test11_Assignee_schema.json"));
-            Files.deleteIfExists(Paths.get("src/test/resources/test11/src/module_test11/resources/module_test11_Creator_schema.json"));
-            Files.deleteIfExists(Paths.get("src/test/resources/test11/src/module_test11/resources/module_test11_Issue_schema.json"));
-            Files.deleteIfExists(Paths.get("src/test/resources/test11/src/module_test11/resources/module_test11_Label_schema.json"));
-            Files.deleteIfExists(Paths.get("src/test/resources/test11/src/module_test11/resources/module_test11_Client_functions.json"));
+            Files.deleteIfExists(Paths.get("src/test/resources/test1/src/module_test1/resources/Assignee_schema.json"));
+            Files.deleteIfExists(Paths.get("src/test/resources/test1/src/module_test1/resources/Client_functions.json"));
+            Files.deleteIfExists(Paths.get("src/test/resources/test1/src/module_test1/resources/Creator_schema.json"));
+            Files.deleteIfExists(Paths.get("src/test/resources/test1/src/module_test1/resources/Issue_schema.json"));
+            Files.deleteIfExists(Paths.get("src/test/resources/test1/src/module_test1/resources/Label_schema.json"));
+
+            Files.deleteIfExists(Paths.get("src/test/resources/test2/src/module_test2/resources/Assignee_schema.json"));
+            Files.deleteIfExists(Paths.get("src/test/resources/test2/src/module_test2/resources/Creator_schema.json"));
+            Files.deleteIfExists(Paths.get("src/test/resources/test2/src/module_test2/resources/Creator_data.json"));
+            Files.deleteIfExists(Paths.get("src/test/resources/test2/src/module_test2/resources/Issue_schema.json"));
+            Files.deleteIfExists(Paths.get("src/test/resources/test2/src/module_test2/resources/Label_schema.json"));
+            Files.deleteIfExists(Paths.get("src/test/resources/test2/src/module_test2/resources/Client_functions.json"));
+
+            Files.deleteIfExists(Paths.get("src/test/resources/test3/src/module_test3/resources/Creator_data.json"));
+            Files.deleteIfExists(Paths.get("src/test/resources/test3/src/module_test3/resources/Assignee_schema.json"));
+            Files.deleteIfExists(Paths.get("src/test/resources/test3/src/module_test3/resources/Creator_schema.json"));
+            Files.deleteIfExists(Paths.get("src/test/resources/test3/src/module_test3/resources/Issue_schema.json"));
+            Files.deleteIfExists(Paths.get("src/test/resources/test3/src/module_test3/resources/Label_schema.json"));
+            Files.deleteIfExists(Paths.get("src/test/resources/test3/src/module_test3/resources/Client_functions.json"));
+
+            Files.deleteIfExists(Paths.get("src/test/resources/test4/src/module_test4/resources/Assignee_schema.json"));
+            Files.deleteIfExists(Paths.get("src/test/resources/test4/src/module_test4/resources/Creator_schema.json"));
+            Files.deleteIfExists(Paths.get("src/test/resources/test4/src/module_test4/resources/Creator_data.json"));
+            Files.deleteIfExists(Paths.get("src/test/resources/test4/src/module_test4/resources/Issue_schema.json"));
+            Files.deleteIfExists(Paths.get("src/test/resources/test4/src/module_test4/resources/Label_schema.json"));
+            Files.deleteIfExists(Paths.get("src/test/resources/test4/src/module_test4/resources/Client_functions.json"));
+
+            Files.deleteIfExists(Paths.get("src/test/resources/test5/src/module_test5/resources/Assignee_schema.json"));
+            Files.deleteIfExists(Paths.get("src/test/resources/test5/src/module_test5/resources/Creator_schema.json"));
+            Files.deleteIfExists(Paths.get("src/test/resources/test5/src/module_test5/resources/Issue_schema.json"));
+            Files.deleteIfExists(Paths.get("src/test/resources/test5/src/module_test5/resources/Label_schema.json"));
+            Files.deleteIfExists(Paths.get("src/test/resources/test5/src/module_test5/resources/Client_functions.json"));
+
+            Files.deleteIfExists(Paths.get("src/test/resources/test6/src/module_test6/resources/Assignee_schema.json"));
+            Files.deleteIfExists(Paths.get("src/test/resources/test6/src/module_test6/resources/Creator_schema.json"));
+            Files.deleteIfExists(Paths.get("src/test/resources/test6/src/module_test6/resources/Issue_schema.json"));
+            Files.deleteIfExists(Paths.get("src/test/resources/test6/src/module_test6/resources/Label_schema.json"));
+            Files.deleteIfExists(Paths.get("src/test/resources/test6/src/module_test6/resources/Client_functions.json"));
+
+            Files.deleteIfExists(Paths.get("src/test/resources/test7/src/module_test7/resources/Assignee_schema.json"));
+            Files.deleteIfExists(Paths.get("src/test/resources/test7/src/module_test7/resources/Creator_schema.json"));
+            Files.deleteIfExists(Paths.get("src/test/resources/test7/src/module_test7/resources/Issue_schema.json"));
+            Files.deleteIfExists(Paths.get("src/test/resources/test7/src/module_test7/resources/Label_schema.json"));
+            Files.deleteIfExists(Paths.get("src/test/resources/test7/src/module_test7/resources/Client_functions.json"));
+
+            Files.deleteIfExists(Paths.get("src/test/resources/test9/src/module_test9/resources/Assignee_schema.json"));
+            Files.deleteIfExists(Paths.get("src/test/resources/test9/src/module_test9/resources/Creator_schema.json"));
+            Files.deleteIfExists(Paths.get("src/test/resources/test9/src/module_test9/resources/Issue_schema.json"));
+            Files.deleteIfExists(Paths.get("src/test/resources/test9/src/module_test9/resources/Label_schema.json"));
+            Files.deleteIfExists(Paths.get("src/test/resources/test9/src/module_test9/resources/Client_functions.json"));
+
+            Files.deleteIfExists(Paths.get("src/test/resources/test10/src/module_test10/resources/Label_data.json"));
+            Files.deleteIfExists(Paths.get("src/test/resources/test10/src/module_test10/resources/Assignee_schema.json"));
+            Files.deleteIfExists(Paths.get("src/test/resources/test10/src/module_test10/resources/Creator_schema.json"));
+            Files.deleteIfExists(Paths.get("src/test/resources/test10/src/module_test10/resources/Issue_schema.json"));
+            Files.deleteIfExists(Paths.get("src/test/resources/test10/src/module_test10/resources/Label_schema.json"));
+            Files.deleteIfExists(Paths.get("src/test/resources/test10/src/module_test10/resources/Client_functions.json"));
+
+            Files.deleteIfExists(Paths.get("src/test/resources/test11/src/module_test11/resources/Assignee_schema.json"));
+            Files.deleteIfExists(Paths.get("src/test/resources/test11/src/module_test11/resources/Creator_schema.json"));
+            Files.deleteIfExists(Paths.get("src/test/resources/test11/src/module_test11/resources/Issue_schema.json"));
+            Files.deleteIfExists(Paths.get("src/test/resources/test11/src/module_test11/resources/Label_schema.json"));
+            Files.deleteIfExists(Paths.get("src/test/resources/test11/src/module_test11/resources/Client_functions.json"));
+
+            Files.deleteIfExists(Paths.get("src/test/resources/test12/src/module_test12/resources/Client_functions.json"));
+
+            Files.deleteIfExists(Paths.get("src/test/resources/test13/src/module_test13/resources/Client_functions.json"));
+
+            Files.deleteIfExists(Paths.get("src/test/resources/test14/src/module_test14/resources/Assignee_schema.json"));
+            Files.deleteIfExists(Paths.get("src/test/resources/test14/src/module_test14/resources/Creator_schema.json"));
+            Files.deleteIfExists(Paths.get("src/test/resources/test14/src/module_test14/resources/Issue_schema.json"));
+            Files.deleteIfExists(Paths.get("src/test/resources/test14/src/module_test14/resources/Label_schema.json"));
+            Files.deleteIfExists(Paths.get("src/test/resources/test14/src/module_test14/resources/Client1_functions.json"));
+            Files.deleteIfExists(Paths.get("src/test/resources/test14/src/module_test14/resources/Client2_functions.json"));
         } catch (IOException e) {
             Reporter.log("Error : " + e.getMessage(), true);
             throw e;
