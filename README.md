@@ -3,13 +3,13 @@ A compiler extension to extract an abstract representation of Ballerina connecto
 Ballerina connector project this compiler extension gets executed. The extension generates two types of files by default. Note that 
 these two types of files get automatically extracted from connectors hence developer does not need to write them.
 
-##Functions File
+## Functions File
 These files end with a file name ``<CLIENT_NAME>_functions.json`` where the `CLIENT_NAME` corresponds to the connector client name.
 When there are ``n`` clients exist in a connector, ``n``  number of functions files get created. Function files get created only if there 
 are client objects with remote function calls. These files can be used to identify the list of connector actions available in a 
 particular connector as well as to identify what types of records are used as input parameters and return types.
 
-##Schema File
+## Schema File
 These files end with a file name ``<RECORD_NAME>_schema.json`` where the `RECORD_NAME` corresponds to a record type defined
 within the connector module. In order for a schema file to be generated for a record type defined within a connector module, the
 record has to be one of the following,
@@ -20,7 +20,7 @@ record has to be one of the following,
   In addition to the above two types of JSON file categories which gets automatically extracted from a connector by default, 
   the connector developer can also specify sample data in files having file names `<RECORD_NAME>_data.json`.
   
-  ##Data File
+  ## Data File
   Data files have to follow the structure given below.
   
 ```
