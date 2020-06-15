@@ -20,8 +20,6 @@ package org.ballerinax.datamapper;
 
 import org.ballerinalang.model.tree.NodeKind;
 import org.ballerinalang.model.tree.expressions.RecordLiteralNode;
-import org.wso2.ballerinalang.compiler.semantics.model.symbols.BObjectTypeSymbol;
-import org.wso2.ballerinalang.compiler.semantics.model.symbols.BVarSymbol;
 import org.wso2.ballerinalang.compiler.tree.BLangNodeVisitor;
 import org.wso2.ballerinalang.compiler.tree.BLangSimpleVariable;
 import org.wso2.ballerinalang.compiler.tree.BLangTypeDefinition;
@@ -33,14 +31,16 @@ import org.wso2.ballerinalang.compiler.tree.expressions.BLangRecordLiteral;
 import org.wso2.ballerinalang.compiler.tree.expressions.BLangTypeInit;
 import org.wso2.ballerinalang.compiler.tree.types.BLangRecordTypeNode;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Visitor to extract Record Type Structure information.
+ */
 public class DataMapperStructureVisitor extends BLangNodeVisitor {
     private Map<String, String> structureMap;
 
-    public DataMapperStructureVisitor(Map structure){
+    public DataMapperStructureVisitor(Map structure) {
         structureMap = structure;
     }
 
@@ -56,15 +56,17 @@ public class DataMapperStructureVisitor extends BLangNodeVisitor {
     @Override
     public void visit(BLangTypeInit varRefExpr) {
         List<BLangExpression> exprList = varRefExpr.argsExpr;
-        ArrayList<BVarSymbol> list = (ArrayList<BVarSymbol>) ((BObjectTypeSymbol) varRefExpr.type.tsymbol).
-                                    initializerFunc.symbol.params;
-        for(BLangExpression expr : exprList) {
-            switch(expr.getKind()) {
+//        ArrayList<BVarSymbol> list = (ArrayList<BVarSymbol>) ((BObjectTypeSymbol) varRefExpr.type.tsymbol).
+//                                    initializerFunc.symbol.params;
+        for (BLangExpression expr : exprList) {
+            switch (expr.getKind()) {
                 case LITERAL:
                 case NAMED_ARGS_EXPR:
                 case RECORD_LITERAL_EXPR:
                 case LIST_CONSTRUCTOR_EXPR:
                     expr.accept(this);
+                    break;
+                default:
                     break;
             }
         }
@@ -73,11 +75,13 @@ public class DataMapperStructureVisitor extends BLangNodeVisitor {
     @Override
     public void visit(BLangNamedArgsExpression varRefExpr) {
         BLangExpression expr = (BLangExpression) varRefExpr.getExpression();
-        switch (expr.getKind()){
+        switch (expr.getKind()) {
             case LITERAL:
             case RECORD_LITERAL_EXPR:
             case LIST_CONSTRUCTOR_EXPR:
                 expr.accept(this);
+                break;
+            default:
                 break;
         }
     }
@@ -89,9 +93,6 @@ public class DataMapperStructureVisitor extends BLangNodeVisitor {
         for (BLangExpression expr : exprList) {
             if (expr.getKind() == NodeKind.RECORD_LITERAL_EXPR) {
                 expr.accept(this);
-            } else if (expr.getKind() == NodeKind.SIMPLE_VARIABLE_REF) {
-                //Note: Here we do not need to travers further because we know that this is an array
-                //and the type is known in advance in this method using listConstructorExpr.type
             }
         }
     }
@@ -105,7 +106,7 @@ public class DataMapperStructureVisitor extends BLangNodeVisitor {
     public void visit(BLangRecordLiteral.BLangRecordKeyValueField recordKeyValue) {
         switch(recordKeyValue.valueExpr.getKind()) {
             case LITERAL:
-                ((BLangLiteral)recordKeyValue.valueExpr).accept(this);
+                ((BLangLiteral) recordKeyValue.valueExpr).accept(this);
                 break;
             case RECORD_LITERAL_EXPR:
             case LIST_CONSTRUCTOR_EXPR:
@@ -113,16 +114,22 @@ public class DataMapperStructureVisitor extends BLangNodeVisitor {
             case NUMERIC_LITERAL:
                 recordKeyValue.valueExpr.accept(this);
                 break;
+            default:
+                break;
         }
     }
 
     @Override
     public void visit(BLangRecordLiteral recordLiteral) {
-        for(RecordLiteralNode.RecordField field : recordLiteral.fields) {
+        for (RecordLiteralNode.RecordField field : recordLiteral.fields) {
             if (field.getKind() == NodeKind.RECORD_LITERAL_KEY_VALUE) {
-                ((BLangRecordLiteral.BLangRecordKeyValueField) field).accept(this);
+                if (field instanceof BLangRecordLiteral.BLangRecordKeyValueField) {
+                    ((BLangRecordLiteral.BLangRecordKeyValueField) field).accept(this);
+                }
             } else if (field.getKind() == NodeKind.LIST_CONSTRUCTOR_EXPR) {
-                ((BLangListConstructorExpr) field).accept(this);
+                if (field instanceof  BLangListConstructorExpr) {
+                    ((BLangListConstructorExpr) field).accept(this);
+                }
             }
         }
     }

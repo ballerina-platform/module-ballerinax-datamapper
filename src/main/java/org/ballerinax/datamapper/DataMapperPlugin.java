@@ -18,7 +18,11 @@
 
 package org.ballerinax.datamapper;
 
-import com.fasterxml.jackson.core.*;
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonLocation;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -26,8 +30,8 @@ import org.ballerinalang.compiler.plugins.AbstractCompilerPlugin;
 import org.ballerinalang.model.elements.Flag;
 import org.ballerinalang.model.elements.PackageID;
 import org.ballerinalang.model.symbols.SymbolKind;
-import org.ballerinalang.model.tree.PackageNode;
 import org.ballerinalang.model.tree.NodeKind;
+import org.ballerinalang.model.tree.PackageNode;
 import org.ballerinalang.model.tree.TopLevelNode;
 import org.ballerinalang.util.diagnostic.Diagnostic;
 import org.ballerinalang.util.diagnostic.DiagnosticLog;
@@ -45,25 +49,28 @@ import org.wso2.ballerinalang.compiler.util.diagnotic.BDiagnosticSource;
 import org.wso2.ballerinalang.compiler.util.diagnotic.DiagnosticPos;
 import org.wso2.ballerinalang.util.Flags;
 
-import java.io.FileReader;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.List;
 import java.util.Stack;
-import java.util.LinkedHashMap;
-import java.util.Iterator;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * Compiler extension to generate sample JSON files for data mapper
+ * Compiler extension to generate sample JSON files for data mapper.
  */
 public class DataMapperPlugin extends AbstractCompilerPlugin {
     private DiagnosticLog dlog;
@@ -90,16 +97,17 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
 
     @Override
     public void process(PackageNode packageNode) {
-        Iterator<TopLevelNode> iterator = ((BLangPackage) packageNode).topLevelNodes.stream().filter(topLevelNodes -> topLevelNodes instanceof BLangTypeDefinition).iterator();
+        Iterator<TopLevelNode> iterator = ((BLangPackage) packageNode).topLevelNodes.stream().filter(topLevelNodes ->
+                topLevelNodes instanceof BLangTypeDefinition).iterator();
         while (iterator.hasNext()) {
             TopLevelNode item = iterator.next();
-            if((((BLangTypeDefinition) item).getTypeNode().type.flags & Flags.CLIENT) == Flags.CLIENT) {
+            if ((((BLangTypeDefinition) item).getTypeNode().type.flags & Flags.CLIENT) == Flags.CLIENT) {
                 clientFlag = true;
                 break;
             }
         }
 
-        if(clientFlag) {
+        if (clientFlag) {
             String pkgRoot = ((BLangPackage) packageNode).repos.resolve(((BLangPackage) packageNode).packageID).inputs.
                     get(0).toString();
             projectSourceFolder = pkgRoot.substring(0, pkgRoot.lastIndexOf("/"));
@@ -117,7 +125,10 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
                     Map<String, String> structureMap = new LinkedHashMap<String, String>();
                     DataMapperStructureVisitor visitor = new DataMapperStructureVisitor(structureMap);
                     visitor.visit(typeDefinition);
-                    String typeName = ((BRecordTypeSymbol) typeDefinition.symbol).toString();
+                    String typeName = null;
+                    if (typeDefinition.symbol instanceof  BRecordTypeSymbol) {
+                        typeName = ((BRecordTypeSymbol) typeDefinition.symbol).toString();
+                    }
                     String serialized = null;
                     try {
                         serialized = new ObjectMapper().writeValueAsString(structureMap);
@@ -137,7 +148,7 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
 
     @Override
     public void pluginExecutionCompleted(PackageID packageID) {
-        if(!clientFlag || noFunctionsFlag) {
+        if (!clientFlag || noFunctionsFlag) {
             return;
         }
 
@@ -150,12 +161,13 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
                 String moduleDirectoryName = key.substring(key.indexOf("/") + 1);
                 moduleDirectoryName = moduleDirectoryName.substring(0, moduleDirectoryName.indexOf(":"));
                 String structureFileName = key.substring(key.lastIndexOf(":") + 1) + "_schema.json";
-                Path targetStructureFilePath = Paths.get(projectSourceFolder, "src", moduleDirectoryName, "resources", structureFileName);
+                Path targetStructureFilePath = Paths.get(projectSourceFolder, "src", moduleDirectoryName,
+                        "resources", structureFileName);
                 String recordEntry = entry.getValue();
 
                 Set<String> keysSet = this.typeInformationMap.keySet();
                 for (String s : keysSet) {
-                    if(recordEntry.contains(s)) {
+                    if (recordEntry.contains(s)) {
                         secondaryItemsSet.add(s);
                     }
                 }
@@ -163,7 +175,7 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
                 try {
                     Utils.writeToFile(recordEntry, targetStructureFilePath);
                     itemsWrittenSet.add(key);
-                }catch(IOException e) {
+                } catch (IOException e) {
                     dlog.logDiagnostic(Diagnostic.Kind.ERROR, nodePosition, e.getMessage());
                 }
             }
@@ -175,12 +187,13 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
             String moduleDirectoryName = key.substring(key.indexOf("/") + 1);
             moduleDirectoryName = moduleDirectoryName.substring(0, moduleDirectoryName.indexOf(":"));
             String structureFileName = key.substring(key.lastIndexOf(":") + 1) + "_schema.json";
-            Path targetStructureFilePath = Paths.get(projectSourceFolder, "src", moduleDirectoryName, "resources", structureFileName);
+            Path targetStructureFilePath = Paths.get(projectSourceFolder, "src", moduleDirectoryName,
+                    "resources", structureFileName);
             String recordEntry = this.typeInformationMap.get(key);
 
             try {
                 Utils.writeToFile(recordEntry, targetStructureFilePath);
-            }catch(IOException e) {
+            } catch (IOException e) {
                 dlog.logDiagnostic(Diagnostic.Kind.ERROR, nodePosition, e.getMessage());
             }
         }
@@ -194,7 +207,7 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
             listOfModuleNames.add(moduleName);
         }
 
-        for(String moduleName : listOfModuleNames) {
+        for (String moduleName : listOfModuleNames) {
             processSampleDataFiles(moduleName);
         }
     }
@@ -207,7 +220,7 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
             listOfSampleDataJSONFiles = walk.map(x -> x.toString())
                     .filter(f -> f.endsWith("_data.json")).collect(Collectors.toList());
 
-            for(String path : listOfSampleDataJSONFiles) {
+            for (String path : listOfSampleDataJSONFiles) {
                 try {
                     readDataArray(path);
                 } catch (IOException e) {
@@ -215,7 +228,8 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
                     BDiagnosticSource source = new BDiagnosticSource(lastPackageNode.packageID , path);
                     DiagnosticPos position = new DiagnosticPos(source, location.getLineNr(), location.getLineNr(),
                             location.getColumnNr(), location.getColumnNr());
-                    dlog.logDiagnostic(Diagnostic.Kind.ERROR, position, "Error: " + getCustomizedErrorMessage(e));
+                    dlog.logDiagnostic(Diagnostic.Kind.ERROR, position, "Error: " +
+                            getCustomizedErrorMessage(e));
                 }
             }
 
@@ -227,7 +241,8 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
                 String moduleDirectoryName = key.substring(key.indexOf("/") + 1);
                 moduleDirectoryName = moduleDirectoryName.substring(0, moduleDirectoryName.indexOf(":"));
                 String structureFileName = key.substring(key.lastIndexOf(":") + 1) + "_data.json";
-                targetStructureFilePath = Paths.get(projectSourceFolder, "src", moduleDirectoryName, "resources", structureFileName);
+                targetStructureFilePath = Paths.get(projectSourceFolder, "src", moduleDirectoryName,
+                        "resources", structureFileName);
 
                 sb.append("{\"");
                 sb.append(key);
@@ -251,7 +266,9 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
 
     private List<String> readDataArray(String path) throws IOException {
         JsonFactory factory = new JsonFactory();
-        parser  = factory.createParser(new FileReader(path));
+        InputStream inputStream = new FileInputStream(path);
+        Reader fileReader = new InputStreamReader(inputStream, "UTF-8");
+        parser  = factory.createParser(fileReader);
 
         List<String> messages = new ArrayList<String>();
         String typeName = null;
@@ -306,16 +323,17 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
                         counter--;
                     }
 
-                    if((expectedNumberOfAttributes != attributeCounter) && (counter != 1)) {
+                    if ((expectedNumberOfAttributes != attributeCounter) && (counter != 1)) {
                         endLocation = parser.getCurrentLocation();
                         BDiagnosticSource source = new BDiagnosticSource(lastPackageNode.packageID , path);
                         startLocation = startLocationStack.pop();
-                        DiagnosticPos position = new DiagnosticPos(source, startLocation.getLineNr(), endLocation.getLineNr(),
+                        DiagnosticPos position = new DiagnosticPos(source, startLocation.getLineNr(),
+                                endLocation.getLineNr(),
                                 startLocation.getColumnNr(), endLocation.getColumnNr());
                         dlog.logDiagnostic(Diagnostic.Kind.ERROR, position, "Error: Sample data provided for " +
                                 typeName + " is different in terms of attributes count");
                     } else {
-                        if(!typeStack.isEmpty()) {
+                        if (!typeStack.isEmpty()) {
                             ArrayList<JsonNode> lst = sampleDataMap.getOrDefault(typeName, new ArrayList<JsonNode>());
                             lst.add(dataRecord);
                             sampleDataMap.put(typeName, lst);
@@ -343,7 +361,7 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
                     if (counter == 1) {
                         typeName = name;
                         String value = typeInformationMap.get(name);
-                        if(value == null) {
+                        if (value == null) {
                             errorFlag = true;
                             continue;
                         }
@@ -356,10 +374,11 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
                             iterator.next();
                         }
                     } else if (counter == 2) {
-                        if(typeRecord.get(typeName).get(name) == null) {
+                        if (typeRecord.get(typeName).get(name) == null) {
                             JsonLocation location = parser.getCurrentLocation();
                             BDiagnosticSource source = new BDiagnosticSource(lastPackageNode.packageID , path);
-                            DiagnosticPos position = new DiagnosticPos(source, location.getLineNr(), location.getLineNr(),
+                            DiagnosticPos position = new DiagnosticPos(source, location.getLineNr(),
+                                    location.getLineNr(),
                                     location.getColumnNr() - (name.length() + 5), location.getColumnNr() - 3);
                             dlog.logDiagnostic(Diagnostic.Kind.ERROR, position, "Error: Type " + typeName +
                                     " does not have an attribute named " + name);
@@ -372,7 +391,7 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
                         previousTypeName = typeName;
                         attributeCounter = 1;
                         typeName = result.asText();
-                        if(typeName.endsWith("[]")) {
+                        if (typeName.endsWith("[]")) {
                             typeName = typeName.substring(0, typeName.length() - 2);
                         }
 
@@ -391,10 +410,11 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
 
                         expectedNumberOfAttributes = attributeCount;
 
-                        if(!typeRecord.get(typeName).has(name)) {
+                        if (!typeRecord.get(typeName).has(name)) {
                             JsonLocation location = parser.getCurrentLocation();
                             BDiagnosticSource source = new BDiagnosticSource(lastPackageNode.packageID , path);
-                            DiagnosticPos position = new DiagnosticPos(source, location.getLineNr(), location.getLineNr(),
+                            DiagnosticPos position = new DiagnosticPos(source, location.getLineNr(),
+                                    location.getLineNr(),
                                     location.getColumnNr() - (name.length() + 5), location.getColumnNr() - 3);
                             dlog.logDiagnostic(Diagnostic.Kind.ERROR, position, "Error: Type " +
                                     typeName + " does not have an attribute named " + name);
@@ -409,7 +429,7 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
                 case VALUE_STRING:
                     final String s = parser.getValueAsString();
                     if (dataRecord != null && dataRecord.get(typeName).has(previousName)) {
-                        ((ObjectNode)dataRecord.get(typeName)).put(previousName, s);
+                        ((ObjectNode) dataRecord.get(typeName)).put(previousName, s);
                     }
                     break;
                 case VALUE_NUMBER_INT:
@@ -455,7 +475,7 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
                     functions.append("\":\"");
                     String typeVariable = requiredParam.symbol.type.toString();
                     functions.append(typeVariable);
-                    if(typeVariable.endsWith("?")) {
+                    if (typeVariable.endsWith("?")) {
                         this.typeSet.add(typeVariable.substring(0, typeVariable.length() - 1));
                     } else if (typeVariable.endsWith("[]")) {
                         this.typeSet.add(typeVariable.substring(0, typeVariable.length() - 2));
@@ -482,7 +502,7 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
                         } else {
                             String returnType = lst.get(i).type.toString();
                             functions.append(returnType);
-                            if(returnType.endsWith("?")) {
+                            if (returnType.endsWith("?")) {
                                 this.typeSet.add(returnType.substring(0, returnType.length() - 1));
                             } else if (returnType.endsWith("[]")) {
                                 this.typeSet.add(returnType.substring(0, returnType.length() - 2));
@@ -505,7 +525,7 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
             }
         }
 
-        if(functions.length() != 0) {
+        if (functions.length() != 0) {
             String symbol = String.valueOf(((BLangTypeDefinition) typeDefinition).symbol);
             String moduleName = symbol.substring(symbol.indexOf("/") + 1);
             if (moduleName.contains(":")) {
@@ -514,14 +534,15 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
 
             String functionsJson = functions.toString();
 
-            if(functionsJson.endsWith(",")) {
+            if (functionsJson.endsWith(",")) {
                 functionsJson = functionsJson.substring(0, functionsJson.lastIndexOf(","));
             }
 
-            functionsJson = "{\"" + symbol.toString() + "\" : " + "[" + functionsJson + "]}";
+            functionsJson = "{\"" + symbol + "\" : " + "[" + functionsJson + "]}";
             functions = new StringBuilder();
             String functionsFileName = name + "_functions.json";
-            Path targetFunctionsFilePath = Paths.get(projectSourceFolder, "src", moduleName, "resources", functionsFileName);
+            Path targetFunctionsFilePath = Paths.get(projectSourceFolder, "src", moduleName, "resources",
+                    functionsFileName);
             Utils.writeToFile(functionsJson, targetFunctionsFilePath);
         } else {
             noFunctionsFlag = true;
@@ -532,11 +553,11 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
         String errorMessage = null;
         String originalMessage = e.getMessage();
 
-        if(originalMessage.contains("Source: java.io.FileReader@")) {
-            String[] arr = originalMessage.split("Source: java.io.FileReader@");
+        if (originalMessage.contains("Source: java.io.InputStreamReader@")) {
+            String[] arr = originalMessage.split("Source: java.io.InputStreamReader@");
             int index = arr[1].indexOf(";");
             String endString = arr[1].substring(index);
-            errorMessage = arr[0] + "Source: java.io.FileReader@OBJECTREF" + endString;
+            errorMessage = arr[0] + "Source: java.io.InputStreamReader@OBJECTREF" + endString;
         }
 
         return errorMessage;

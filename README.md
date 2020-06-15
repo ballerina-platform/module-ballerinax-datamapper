@@ -18,7 +18,8 @@ record has to be one of the following,
  2. A record type referred by a record, which falls into the first category.
  
   In addition to the above two types of JSON file categories, which get automatically extracted from a connector by default, 
-  the connector developer can also specify sample data in the `<RECORD_NAME>_data.json` files.
+  the connector developer can also specify sample data in the `<RECORD_NAME>_data.json` files. Note that the use 
+  of the term schema here does not correspond to [JSON Schema](https://json-schema.org/learn/miscellaneous-examples.html).
   
   ## Data File
   Data files have to follow the structure given below.

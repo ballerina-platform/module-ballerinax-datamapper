@@ -25,6 +25,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 
+/**
+ * Utilities class.
+ */
 public class Utils {
     public static void writeToFile(String content, Path targetFilePath) throws IOException {
         File newFile = targetFilePath.toFile();
