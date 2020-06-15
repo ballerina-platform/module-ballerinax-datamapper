@@ -120,14 +120,10 @@ public class DataMapperStructureVisitor extends BLangNodeVisitor {
     @Override
     public void visit(BLangRecordLiteral recordLiteral) {
         for (RecordLiteralNode.RecordField field : recordLiteral.fields) {
-            if (field.getKind() == NodeKind.RECORD_LITERAL_KEY_VALUE) {
-                if (field instanceof BLangRecordLiteral.BLangRecordKeyValueField) {
-                    ((BLangRecordLiteral.BLangRecordKeyValueField) field).accept(this);
-                }
-            } else if (field.getKind() == NodeKind.LIST_CONSTRUCTOR_EXPR) {
-                if (field instanceof  BLangListConstructorExpr) {
-                    ((BLangListConstructorExpr) field).accept(this);
-                }
+            if (field instanceof BLangRecordLiteral.BLangRecordKeyValueField) {
+                ((BLangRecordLiteral.BLangRecordKeyValueField) field).accept(this);
+            } else if (field instanceof  BLangListConstructorExpr) {
+                ((BLangListConstructorExpr) field).accept(this);
             }
         }
     }

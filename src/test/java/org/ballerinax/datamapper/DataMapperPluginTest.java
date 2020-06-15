@@ -138,7 +138,7 @@ public class DataMapperPluginTest {
         Assert.assertEquals(result.getErrorCount(), 1);
         BAssertUtil.validateError(result, 0,
                 "Error: Unexpected character (':' (code 58)): was expecting double-quote to start field name\n" +
-                        " at [Source: java.io.InputStreamReader@OBJECTREF; line: 4, column: 14]", 4, 14);
+                        " at [Source: (InputStreamReader); line: 4, column: 14]", 4, 14);
     }
 
     @Test
@@ -212,123 +212,88 @@ public class DataMapperPluginTest {
     public void tearDown() throws IOException {
         //Cleanup the test projects if they already have generated json files
         try {
-            Files.deleteIfExists(Paths.get("src/test/resources/test1/src/module_test1/resources/" +
-                    "Assignee_schema.json"));
-            Files.deleteIfExists(Paths.get("src/test/resources/test1/src/module_test1/resources/" +
-                    "Client_functions.json"));
-            Files.deleteIfExists(Paths.get("src/test/resources/test1/src/module_test1/resources/" +
-                    "Creator_schema.json"));
-            Files.deleteIfExists(Paths.get("src/test/resources/test1/src/module_test1/resources/" +
-                    "Issue_schema.json"));
-            Files.deleteIfExists(Paths.get("src/test/resources/test1/src/module_test1/resources/" +
-                    "Label_schema.json"));
+            String path = "src/test/resources/test1/src/module_test1/resources/";
+            Files.deleteIfExists(Paths.get(path + "Assignee_schema.json"));
+            Files.deleteIfExists(Paths.get(path + "Client_functions.json"));
+            Files.deleteIfExists(Paths.get(path + "Creator_schema.json"));
+            Files.deleteIfExists(Paths.get(path + "Issue_schema.json"));
+            Files.deleteIfExists(Paths.get(path + "Label_schema.json"));
 
-            Files.deleteIfExists(Paths.get("src/test/resources/test2/src/module_test2/resources/" +
-                    "Assignee_schema.json"));
-            Files.deleteIfExists(Paths.get("src/test/resources/test2/src/module_test2/resources/" +
-                    "Creator_schema.json"));
-            Files.deleteIfExists(Paths.get("src/test/resources/test2/src/module_test2/resources/" +
-                    "Creator_data.json"));
-            Files.deleteIfExists(Paths.get("src/test/resources/test2/src/module_test2/resources/" +
-                    "Issue_schema.json"));
-            Files.deleteIfExists(Paths.get("src/test/resources/test2/src/module_test2/resources/" +
-                    "Label_schema.json"));
-            Files.deleteIfExists(Paths.get("src/test/resources/test2/src/module_test2/resources/" +
-                    "Client_functions.json"));
+            path = "src/test/resources/test2/src/module_test2/resources/";
 
-            Files.deleteIfExists(Paths.get("src/test/resources/test3/src/module_test3/resources/" +
-                    "Creator_data.json"));
-            Files.deleteIfExists(Paths.get("src/test/resources/test3/src/module_test3/resources/" +
-                    "Assignee_schema.json"));
-            Files.deleteIfExists(Paths.get("src/test/resources/test3/src/module_test3/resources/" +
-                    "Creator_schema.json"));
-            Files.deleteIfExists(Paths.get("src/test/resources/test3/src/module_test3/resources/" +
-                    "Issue_schema.json"));
-            Files.deleteIfExists(Paths.get("src/test/resources/test3/src/module_test3/resources/" +
-                    "Label_schema.json"));
-            Files.deleteIfExists(Paths.get("src/test/resources/test3/src/module_test3/resources/" +
-                    "Client_functions.json"));
+            Files.deleteIfExists(Paths.get(path + "Assignee_schema.json"));
+            Files.deleteIfExists(Paths.get(path + "Creator_schema.json"));
+            Files.deleteIfExists(Paths.get(path + "Creator_data.json"));
+            Files.deleteIfExists(Paths.get(path + "Issue_schema.json"));
+            Files.deleteIfExists(Paths.get(path + "Label_schema.json"));
+            Files.deleteIfExists(Paths.get(path + "Client_functions.json"));
 
-            Files.deleteIfExists(Paths.get("src/test/resources/test4/src/module_test4/resources/" +
-                    "Assignee_schema.json"));
-            Files.deleteIfExists(Paths.get("src/test/resources/test4/src/module_test4/resources/" +
-                    "Creator_schema.json"));
-            Files.deleteIfExists(Paths.get("src/test/resources/test4/src/module_test4/resources/" +
-                    "Creator_data.json"));
-            Files.deleteIfExists(Paths.get("src/test/resources/test4/src/module_test4/resources/" +
-                    "Issue_schema.json"));
-            Files.deleteIfExists(Paths.get("src/test/resources/test4/src/module_test4/resources/" +
-                    "Label_schema.json"));
-            Files.deleteIfExists(Paths.get("src/test/resources/test4/src/module_test4/resources/" +
-                    "Client_functions.json"));
+            path = "src/test/resources/test3/src/module_test3/resources/";
 
-            Files.deleteIfExists(Paths.get("src/test/resources/test5/src/module_test5/resources/" +
-                    "Assignee_schema.json"));
-            Files.deleteIfExists(Paths.get("src/test/resources/test5/src/module_test5/resources/" +
-                    "Creator_schema.json"));
-            Files.deleteIfExists(Paths.get("src/test/resources/test5/src/module_test5/resources/" +
-                    "Issue_schema.json"));
-            Files.deleteIfExists(Paths.get("src/test/resources/test5/src/module_test5/resources/" +
-                    "Label_schema.json"));
-            Files.deleteIfExists(Paths.get("src/test/resources/test5/src/module_test5/resources/" +
-                    "Client_functions.json"));
+            Files.deleteIfExists(Paths.get(path + "Creator_data.json"));
+            Files.deleteIfExists(Paths.get(path + "Assignee_schema.json"));
+            Files.deleteIfExists(Paths.get(path + "Creator_schema.json"));
+            Files.deleteIfExists(Paths.get(path + "Issue_schema.json"));
+            Files.deleteIfExists(Paths.get(path + "Label_schema.json"));
+            Files.deleteIfExists(Paths.get(path + "Client_functions.json"));
 
-            Files.deleteIfExists(Paths.get("src/test/resources/test6/src/module_test6/resources/" +
-                    "Assignee_schema.json"));
-            Files.deleteIfExists(Paths.get("src/test/resources/test6/src/module_test6/resources/" +
-                    "Creator_schema.json"));
-            Files.deleteIfExists(Paths.get("src/test/resources/test6/src/module_test6/resources/" +
-                    "Issue_schema.json"));
-            Files.deleteIfExists(Paths.get("src/test/resources/test6/src/module_test6/resources/" +
-                    "Label_schema.json"));
-            Files.deleteIfExists(Paths.get("src/test/resources/test6/src/module_test6/resources/" +
-                    "Client_functions.json"));
+            path = "src/test/resources/test4/src/module_test4/resources/";
 
-            Files.deleteIfExists(Paths.get("src/test/resources/test7/src/module_test7/resources/" +
-                    "Assignee_schema.json"));
-            Files.deleteIfExists(Paths.get("src/test/resources/test7/src/module_test7/resources/" +
-                    "Creator_schema.json"));
-            Files.deleteIfExists(Paths.get("src/test/resources/test7/src/module_test7/resources/" +
-                    "Issue_schema.json"));
-            Files.deleteIfExists(Paths.get("src/test/resources/test7/src/module_test7/resources/" +
-                    "Label_schema.json"));
-            Files.deleteIfExists(Paths.get("src/test/resources/test7/src/module_test7/resources/" +
-                    "Client_functions.json"));
+            Files.deleteIfExists(Paths.get(path + "Assignee_schema.json"));
+            Files.deleteIfExists(Paths.get(path + "Creator_schema.json"));
+            Files.deleteIfExists(Paths.get(path + "Creator_data.json"));
+            Files.deleteIfExists(Paths.get(path + "Issue_schema.json"));
+            Files.deleteIfExists(Paths.get(path + "Label_schema.json"));
+            Files.deleteIfExists(Paths.get(path + "Client_functions.json"));
 
-            Files.deleteIfExists(Paths.get("src/test/resources/test9/src/module_test9/resources/" +
-                    "Assignee_schema.json"));
-            Files.deleteIfExists(Paths.get("src/test/resources/test9/src/module_test9/resources/" +
-                    "Creator_schema.json"));
-            Files.deleteIfExists(Paths.get("src/test/resources/test9/src/module_test9/resources/" +
-                    "Issue_schema.json"));
-            Files.deleteIfExists(Paths.get("src/test/resources/test9/src/module_test9/resources/" +
-                    "Label_schema.json"));
-            Files.deleteIfExists(Paths.get("src/test/resources/test9/src/module_test9/resources/" +
-                    "Client_functions.json"));
+            path = "src/test/resources/test5/src/module_test5/resources/";
 
-            Files.deleteIfExists(Paths.get("src/test/resources/test10/src/module_test10/resources/" +
-                    "Label_data.json"));
-            Files.deleteIfExists(Paths.get("src/test/resources/test10/src/module_test10/resources/" +
-                    "Assignee_schema.json"));
-            Files.deleteIfExists(Paths.get("src/test/resources/test10/src/module_test10/resources/" +
-                    "Creator_schema.json"));
-            Files.deleteIfExists(Paths.get("src/test/resources/test10/src/module_test10/resources/" +
-                    "Issue_schema.json"));
-            Files.deleteIfExists(Paths.get("src/test/resources/test10/src/module_test10/resources/" +
-                    "Label_schema.json"));
-            Files.deleteIfExists(Paths.get("src/test/resources/test10/src/module_test10/resources/" +
-                    "Client_functions.json"));
+            Files.deleteIfExists(Paths.get(path + "Assignee_schema.json"));
+            Files.deleteIfExists(Paths.get(path + "Creator_schema.json"));
+            Files.deleteIfExists(Paths.get(path + "Issue_schema.json"));
+            Files.deleteIfExists(Paths.get(path + "Label_schema.json"));
+            Files.deleteIfExists(Paths.get(path + "Client_functions.json"));
 
-            Files.deleteIfExists(Paths.get("src/test/resources/test11/src/module_test11/resources/" +
-                    "Assignee_schema.json"));
-            Files.deleteIfExists(Paths.get("src/test/resources/test11/src/module_test11/resources/" +
-                    "Creator_schema.json"));
-            Files.deleteIfExists(Paths.get("src/test/resources/test11/src/module_test11/resources/" +
-                    "Issue_schema.json"));
-            Files.deleteIfExists(Paths.get("src/test/resources/test11/src/module_test11/resources/" +
-                    "Label_schema.json"));
-            Files.deleteIfExists(Paths.get("src/test/resources/test11/src/module_test11/resources/" +
-                    "Client_functions.json"));
+            path = "src/test/resources/test6/src/module_test6/resources/";
+
+            Files.deleteIfExists(Paths.get(path + "Assignee_schema.json"));
+            Files.deleteIfExists(Paths.get(path + "Creator_schema.json"));
+            Files.deleteIfExists(Paths.get(path + "Issue_schema.json"));
+            Files.deleteIfExists(Paths.get(path + "Label_schema.json"));
+            Files.deleteIfExists(Paths.get(path + "Client_functions.json"));
+
+            path = "src/test/resources/test7/src/module_test7/resources/";
+
+            Files.deleteIfExists(Paths.get(path + "Assignee_schema.json"));
+            Files.deleteIfExists(Paths.get(path + "Creator_schema.json"));
+            Files.deleteIfExists(Paths.get(path + "Issue_schema.json"));
+            Files.deleteIfExists(Paths.get(path + "Label_schema.json"));
+            Files.deleteIfExists(Paths.get(path + "Client_functions.json"));
+
+            path = "src/test/resources/test9/src/module_test9/resources/";
+
+            Files.deleteIfExists(Paths.get(path + "Assignee_schema.json"));
+            Files.deleteIfExists(Paths.get(path + "Creator_schema.json"));
+            Files.deleteIfExists(Paths.get(path + "Issue_schema.json"));
+            Files.deleteIfExists(Paths.get(path + "Label_schema.json"));
+            Files.deleteIfExists(Paths.get(path + "Client_functions.json"));
+
+            path = "src/test/resources/test10/src/module_test10/resources/";
+
+            Files.deleteIfExists(Paths.get(path + "Label_data.json"));
+            Files.deleteIfExists(Paths.get(path + "Assignee_schema.json"));
+            Files.deleteIfExists(Paths.get(path + "Creator_schema.json"));
+            Files.deleteIfExists(Paths.get(path + "Issue_schema.json"));
+            Files.deleteIfExists(Paths.get(path + "Label_schema.json"));
+            Files.deleteIfExists(Paths.get(path + "Client_functions.json"));
+
+            path = "src/test/resources/test11/src/module_test11/resources/";
+
+            Files.deleteIfExists(Paths.get(path + "Assignee_schema.json"));
+            Files.deleteIfExists(Paths.get(path + "Creator_schema.json"));
+            Files.deleteIfExists(Paths.get(path + "Issue_schema.json"));
+            Files.deleteIfExists(Paths.get(path + "Label_schema.json"));
+            Files.deleteIfExists(Paths.get(path + "Client_functions.json"));
 
             Files.deleteIfExists(Paths.get("src/test/resources/test12/src/module_test12/resources/" +
                     "Client_functions.json"));
@@ -336,18 +301,14 @@ public class DataMapperPluginTest {
             Files.deleteIfExists(Paths.get("src/test/resources/test13/src/module_test13/resources/" +
                     "Client_functions.json"));
 
-            Files.deleteIfExists(Paths.get("src/test/resources/test14/src/module_test14/resources/" +
-                    "Assignee_schema.json"));
-            Files.deleteIfExists(Paths.get("src/test/resources/test14/src/module_test14/resources/" +
-                    "Creator_schema.json"));
-            Files.deleteIfExists(Paths.get("src/test/resources/test14/src/module_test14/resources/" +
-                    "Issue_schema.json"));
-            Files.deleteIfExists(Paths.get("src/test/resources/test14/src/module_test14/resources/" +
-                    "Label_schema.json"));
-            Files.deleteIfExists(Paths.get("src/test/resources/test14/src/module_test14/resources/" +
-                    "Client1_functions.json"));
-            Files.deleteIfExists(Paths.get("src/test/resources/test14/src/module_test14/resources/" +
-                    "Client2_functions.json"));
+            path = "src/test/resources/test14/src/module_test14/resources/";
+
+            Files.deleteIfExists(Paths.get(path + "Assignee_schema.json"));
+            Files.deleteIfExists(Paths.get(path + "Creator_schema.json"));
+            Files.deleteIfExists(Paths.get(path + "Issue_schema.json"));
+            Files.deleteIfExists(Paths.get(path + "Label_schema.json"));
+            Files.deleteIfExists(Paths.get(path + "Client1_functions.json"));
+            Files.deleteIfExists(Paths.get(path + "Client2_functions.json"));
         } catch (IOException e) {
             Reporter.log("Error : " + e.getMessage(), true);
             throw e;

@@ -97,13 +97,12 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
 
     @Override
     public void process(PackageNode packageNode) {
-        Iterator<TopLevelNode> iterator = ((BLangPackage) packageNode).topLevelNodes.stream().filter(topLevelNodes ->
-                topLevelNodes instanceof BLangTypeDefinition).iterator();
-        while (iterator.hasNext()) {
-            TopLevelNode item = iterator.next();
-            if ((((BLangTypeDefinition) item).getTypeNode().type.flags & Flags.CLIENT) == Flags.CLIENT) {
-                clientFlag = true;
-                break;
+        for (TopLevelNode node : ((BLangPackage) packageNode).topLevelNodes) {
+            if (node instanceof BLangTypeDefinition) {
+                if ((((BLangTypeDefinition) node).getTypeNode().type.flags & Flags.CLIENT) == Flags.CLIENT) {
+                    clientFlag = true;
+                    break;
+                }
             }
         }
 
@@ -558,6 +557,8 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
             int index = arr[1].indexOf(";");
             String endString = arr[1].substring(index);
             errorMessage = arr[0] + "Source: java.io.InputStreamReader@OBJECTREF" + endString;
+        } else if (originalMessage.contains("(InputStreamReader)")) {
+            errorMessage = originalMessage;
         }
 
         return errorMessage;
