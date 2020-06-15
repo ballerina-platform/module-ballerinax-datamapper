@@ -56,8 +56,6 @@ public class DataMapperStructureVisitor extends BLangNodeVisitor {
     @Override
     public void visit(BLangTypeInit varRefExpr) {
         List<BLangExpression> exprList = varRefExpr.argsExpr;
-//        ArrayList<BVarSymbol> list = (ArrayList<BVarSymbol>) ((BObjectTypeSymbol) varRefExpr.type.tsymbol).
-//                                    initializerFunc.symbol.params;
         for (BLangExpression expr : exprList) {
             switch (expr.getKind()) {
                 case LITERAL:
