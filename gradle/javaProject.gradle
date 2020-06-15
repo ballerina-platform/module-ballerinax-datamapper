@@ -1,0 +1,83 @@
+apply plugin: "java"
+apply plugin: "com.github.spotbugs"
+apply plugin: "checkstyle"
+
+tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8'
+}
+
+sourceCompatibility = JavaVersion.VERSION_1_8
+
+dependencies {
+    compile group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.8.6'
+    compile group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: '2.8.6'
+    compile group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: '2.8.0'
+    implementation group: 'org.ballerinalang', name: 'ballerina-lang', version: '1.2.4'
+    implementation group: 'org.ballerinalang', name: 'ballerina-test-utils', version: '1.2.4'
+    testCompile 'org.testng:testng:6.13.1'
+
+    checkstyle project(":build-config:checkstyle")
+    checkstyle "com.puppycrawl.tools:checkstyle:${puppycrawlCheckstyleVersion}"
+}
+
+test {
+    systemProperty "java.util.logging.config.file", "src/test/resources/logging.properties"
+    systemProperty "java.util.logging.manager", "org.ballerinalang.logging.BLogManager"
+    systemProperty "ballerina.home", "/home/miyurud/software/ballerina-1.2.4/distributions/jballerina-1.2.4"
+
+    useTestNG() {
+        suites 'src/test/resources/testng.xml'
+    }
+
+    afterSuite { suite, result ->
+        result.exception?.printStackTrace()
+    }
+
+    testLogging {
+        // this will only change --warn flag behaviour
+        warn {
+            events = ["failed", "skipped"]
+            exceptionFormat "full"
+        }
+    }
+}
+
+spotbugsMain {
+    ignoreFailures = true
+    effort = "max"
+    reportLevel = "low"
+    reportsDir = file("$project.buildDir/reports/spotbugs")
+    def excludeFile = file("spotbugs-exclude.xml")
+    if (excludeFile.exists()) {
+        it.excludeFilter = excludeFile
+    }
+    reports {
+        text.enabled = true
+    }
+}
+
+spotbugsTest {
+    enabled = false
+}
+
+task validateSpotbugs() {
+    doLast {
+        if (spotbugsMain.reports.size() > 0 &&
+                spotbugsMain.reports[0].destination.exists() &&
+                spotbugsMain.reports[0].destination.text.readLines().size() > 0) {
+            spotbugsMain.reports[0].destination?.eachLine {
+                println 'Failure: ' + it
+            }
+            throw new GradleException("Spotbugs rule violations were found.");
+        }
+    }
+}
+
+checkstyle {
+    toolVersion '7.8.2'
+    configFile rootProject.file("build-config/checkstyle/build/checkstyle.xml")
+    configProperties = ["suppressionFile" : rootProject.file("build-config/checkstyle/build/suppressions.xml")]
+}
+
+spotbugsMain.finalizedBy validateSpotbugs
+checkstyleMain.dependsOn(":build-config:checkstyle:downloadMultipleFiles")
