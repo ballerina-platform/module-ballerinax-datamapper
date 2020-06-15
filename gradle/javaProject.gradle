@@ -8,22 +8,45 @@ tasks.withType(JavaCompile) {
 
 sourceCompatibility = JavaVersion.VERSION_1_8
 
+configurations {
+    bDistributionDir
+    balTools
+}
+
 dependencies {
     compile group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.8.6'
     compile group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: '2.8.6'
     compile group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: '2.8.0'
-    implementation group: 'org.ballerinalang', name: 'ballerina-lang', version: '1.2.4'
-    implementation group: 'org.ballerinalang', name: 'ballerina-test-utils', version: '1.2.4'
+    implementation group: 'org.ballerinalang', name: 'ballerina-lang', version: "${ballerinaLangVersion}"
+    implementation group: 'org.ballerinalang', name: 'ballerina-test-utils', version: "${ballerinaLangVersion}"
     testCompile 'org.testng:testng:6.13.1'
 
     checkstyle project(":build-config:checkstyle")
     checkstyle "com.puppycrawl.tools:checkstyle:${puppycrawlCheckstyleVersion}"
+    balTools("org.ballerinalang:jballerina-tools:${ballerinaLangVersion}") {
+        transitive = false
+    }
+}
+
+def bDistribution = file("$project.buildDir/extracted-distribution/jballerina-tools-${ballerinaLangVersion}")
+
+task unzip {
+    doLast {
+        configurations.balTools.resolvedConfiguration.resolvedArtifacts.each { artifact ->
+            copy {
+                from project.zipTree(artifact.getFile())
+                into new File(project.buildDir, "extracted-distribution/")
+            }
+        }
+    }
+    outputs.dir bDistribution
 }
 
 test {
+    dependsOn unzip
     systemProperty "java.util.logging.config.file", "src/test/resources/logging.properties"
     systemProperty "java.util.logging.manager", "org.ballerinalang.logging.BLogManager"
-    systemProperty "ballerina.home", "/home/miyurud/software/ballerina-1.2.4/distributions/jballerina-1.2.4"
+    systemProperty "ballerina.home", "$bDistribution.absolutePath"
 
     useTestNG() {
         suites 'src/test/resources/testng.xml'
