@@ -11,7 +11,6 @@
 .mtj.tmp/
 
 # Package Files #
-!kubernetes-extension/src/test/resources/hello-executable.jar
 *.jar
 *.war
 *.ear
@@ -42,7 +41,4 @@ dependency-reduced-pom.xml
 
 #Ballerina
 *.balx
-samples/*/kubernetes
-samples/*/docker
-velocity.log*
 *Ballerina.lock
