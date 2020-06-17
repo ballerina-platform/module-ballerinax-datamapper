@@ -5,7 +5,7 @@ these two types of files get automatically extracted from connectors. Hence, the
 
 ## Functions File
 These files are named as ``<CLIENT_NAME>_functions.json`` in which the `CLIENT_NAME` corresponds to the connector client name.
-When there are ``n`` number of clients existing in a connector, a ``n``  number of functions files will get created. Function files get created only if there 
+When there are ``n`` number of clients existing in a connector, a ``n``  number of functions files will get created. Functions files get created only if there 
 are client objects with remote function calls. These files can be used to identify the list of connector actions available in a 
 particular connector as well as to identify what types of records are used as input parameters and return types.
 
@@ -49,7 +49,7 @@ instance has `M` number of attributes.
 ```
 
 An `<ATTRIBUTE_VALUE_j>` can be a simple literal (string/numeric value), 
-`<SAMPLE_JSON_INSTANCE_j>`, an array, or `null`.
+`<SAMPLE_JSON_INSTANCE_k>`, an array, or `null`.
 
 Unlike functions files and schema files, which automatically get extracted
 from the Ballerina Abstract Syntax Tree (AST), data files are user-specified JSON files. 
