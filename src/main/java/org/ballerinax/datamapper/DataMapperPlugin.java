@@ -366,6 +366,7 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
                         }
 
                         typeRecord = constructJSON(value);
+                        currentTypeStructure = typeRecord.toString();
                         Iterator<String> iterator = typeRecord.get(name).fieldNames();
                         expectedNumberOfAttributes = 0;
                         while (iterator.hasNext()) {
