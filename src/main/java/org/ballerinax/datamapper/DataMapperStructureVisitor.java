@@ -46,6 +46,10 @@ public class DataMapperStructureVisitor extends BLangNodeVisitor {
 
     @Override
     public void visit(BLangTypeDefinition typeDefinition) {
+        if (!(typeDefinition.typeNode instanceof BLangRecordTypeNode)) {
+            return;
+        }
+
         for (BLangSimpleVariable field: ((BLangRecordTypeNode) typeDefinition.typeNode).fields) {
             if (field.getKind() == NodeKind.VARIABLE) {
                 field.accept(this);
