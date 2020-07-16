@@ -33,6 +33,7 @@ import org.ballerinalang.model.symbols.SymbolKind;
 import org.ballerinalang.model.tree.NodeKind;
 import org.ballerinalang.model.tree.PackageNode;
 import org.ballerinalang.model.tree.TopLevelNode;
+import org.ballerinalang.project.Project;
 import org.ballerinalang.util.diagnostic.Diagnostic;
 import org.ballerinalang.util.diagnostic.DiagnosticLog;
 import org.ballerinax.datamapper.util.Utils;
@@ -45,6 +46,7 @@ import org.wso2.ballerinalang.compiler.tree.BLangTypeDefinition;
 import org.wso2.ballerinalang.compiler.tree.types.BLangObjectTypeNode;
 import org.wso2.ballerinalang.compiler.tree.types.BLangType;
 import org.wso2.ballerinalang.compiler.tree.types.BLangUnionTypeNode;
+import org.wso2.ballerinalang.compiler.util.CompilerContext;
 import org.wso2.ballerinalang.compiler.util.diagnotic.BDiagnosticSource;
 import org.wso2.ballerinalang.compiler.util.diagnotic.DiagnosticPos;
 import org.wso2.ballerinalang.util.Flags;
@@ -85,6 +87,12 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
     private boolean noFunctionsFlag;
     private JsonParser parser;
     private String currentTypeStructure;
+    private CompilerContext context = null;
+
+    @Override
+    public void setCompilerContext(CompilerContext ctx) {
+        context = ctx;
+    }
 
     @Override
     public void init(DiagnosticLog diagnosticLog) {
@@ -97,6 +105,12 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
 
     @Override
     public void process(PackageNode packageNode) {
+        Project project = context.get(Project.PROJECT_KEY);
+
+        if (!project.isModuleExists(((BLangPackage) packageNode).packageID)) {
+            return;
+        }
+
         for (TopLevelNode node : ((BLangPackage) packageNode).topLevelNodes) {
             if (node instanceof BLangTypeDefinition) {
                 if ((((BLangTypeDefinition) node).getTypeNode().type.flags & Flags.CLIENT) == Flags.CLIENT) {
