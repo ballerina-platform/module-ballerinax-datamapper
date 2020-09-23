@@ -8,7 +8,7 @@ plugins {
 description = 'Ballerinax - DataMapper Extension'
 
 ext.puppycrawlCheckstyleVersion = "8.18"
-ext.ballerinaLangVersion = project.version
+ext.ballerinaLangVersion = project.ballerinaLangVersion
 ext.dataMapperVersion = project.version
 
 allprojects {
