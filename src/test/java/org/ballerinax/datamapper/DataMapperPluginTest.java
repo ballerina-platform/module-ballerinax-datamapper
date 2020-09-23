@@ -138,7 +138,7 @@ public class DataMapperPluginTest {
         Assert.assertEquals(result.getErrorCount(), 1);
         BAssertUtil.validateError(result, 0,
                 "Error: Unexpected character (':' (code 58)): was expecting double-quote to start field name\n" +
-                        " at [Source: (InputStreamReader); line: 4, column: 14]", 4, 14);
+                        " at [Source: java.io.InputStreamReader@OBJECTREF; line: 4, column: 14]", 4, 14);
     }
 
     @Test

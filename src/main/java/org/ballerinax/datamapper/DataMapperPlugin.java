@@ -29,7 +29,6 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.ballerinalang.compiler.plugins.AbstractCompilerPlugin;
 import org.ballerinalang.model.elements.Flag;
 import org.ballerinalang.model.elements.PackageID;
-import org.ballerinalang.model.symbols.SymbolKind;
 import org.ballerinalang.model.tree.NodeKind;
 import org.ballerinalang.model.tree.PackageNode;
 import org.ballerinalang.model.tree.TopLevelNode;
@@ -38,12 +37,11 @@ import org.ballerinalang.util.diagnostic.Diagnostic;
 import org.ballerinalang.util.diagnostic.DiagnosticLog;
 import org.ballerinax.datamapper.util.Utils;
 import org.wso2.ballerinalang.compiler.semantics.model.symbols.BRecordTypeSymbol;
-import org.wso2.ballerinalang.compiler.semantics.model.symbols.BTypeSymbol;
+import org.wso2.ballerinalang.compiler.tree.BLangClassDefinition;
 import org.wso2.ballerinalang.compiler.tree.BLangFunction;
 import org.wso2.ballerinalang.compiler.tree.BLangPackage;
 import org.wso2.ballerinalang.compiler.tree.BLangSimpleVariable;
 import org.wso2.ballerinalang.compiler.tree.BLangTypeDefinition;
-import org.wso2.ballerinalang.compiler.tree.types.BLangObjectTypeNode;
 import org.wso2.ballerinalang.compiler.tree.types.BLangType;
 import org.wso2.ballerinalang.compiler.tree.types.BLangUnionTypeNode;
 import org.wso2.ballerinalang.compiler.util.CompilerContext;
@@ -112,8 +110,8 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
         }
 
         for (TopLevelNode node : ((BLangPackage) packageNode).topLevelNodes) {
-            if (node instanceof BLangTypeDefinition) {
-                if ((((BLangTypeDefinition) node).getTypeNode().type.flags & Flags.CLIENT) == Flags.CLIENT) {
+            if (node instanceof BLangClassDefinition) {
+                if ((((BLangClassDefinition) node).symbol.flags & Flags.CLIENT) == Flags.CLIENT) {
                     clientFlag = true;
                     break;
                 }
@@ -127,20 +125,23 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
             projectSourceFolder = projectSourceFolder.substring(0, projectSourceFolder.lastIndexOf("/"));
             projectSourceFolder = projectSourceFolder.substring(0, projectSourceFolder.lastIndexOf("/"));
 
-            for (BLangTypeDefinition typeDefinition : ((BLangPackage) packageNode).typeDefinitions) {
-                if ((typeDefinition.typeNode.type.tsymbol.flags & Flags.CLIENT) == Flags.CLIENT) {
+            for (TopLevelNode topLevelNode : ((BLangPackage) packageNode).topLevelNodes) {
+                if (topLevelNode.getKind() == NodeKind.CLASS_DEFN &&
+                        (((BLangClassDefinition) topLevelNode).symbol.flags & Flags.CLIENT) == Flags.CLIENT) {
                     try {
-                        extractFunctionCalls(typeDefinition);
+                        extractFunctionCalls((BLangClassDefinition) topLevelNode);
                     } catch (Exception e) {
                         dlog.logDiagnostic(Diagnostic.Kind.ERROR, packageNode.getPosition(), e.getMessage());
                     }
-                } else if (((BTypeSymbol) typeDefinition.symbol).kind == SymbolKind.RECORD) {
+                } else if (topLevelNode.getKind() == NodeKind.TYPE_DEFINITION &&
+                        ((BLangTypeDefinition) topLevelNode).typeNode.getKind() == NodeKind.RECORD_TYPE) {
+                    BLangTypeDefinition recordTypeDef = (BLangTypeDefinition) topLevelNode;
                     Map<String, String> structureMap = new LinkedHashMap<String, String>();
                     DataMapperStructureVisitor visitor = new DataMapperStructureVisitor(structureMap);
-                    visitor.visit(typeDefinition);
+                    visitor.visit(recordTypeDef);
                     String typeName = null;
-                    if (typeDefinition.symbol instanceof  BRecordTypeSymbol) {
-                        typeName = ((BRecordTypeSymbol) typeDefinition.symbol).toString();
+                    if (recordTypeDef.symbol instanceof  BRecordTypeSymbol) {
+                        typeName = ((BRecordTypeSymbol) recordTypeDef.symbol).toString();
                     }
                     String serialized = null;
                     try {
@@ -472,10 +473,10 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
         return result;
     }
 
-    private void extractFunctionCalls(BLangTypeDefinition typeDefinition) throws IOException {
+    private void extractFunctionCalls(BLangClassDefinition typeDefinition) throws IOException {
         noFunctionsFlag = false;
         String name = typeDefinition.name.toString();
-        Iterator<BLangFunction> iterator = ((BLangObjectTypeNode) typeDefinition.typeNode).functions.iterator();
+        Iterator<BLangFunction> iterator = typeDefinition.functions.iterator();
         boolean flag = false;
         while (iterator.hasNext()) {
             BLangFunction function =  iterator.next();
@@ -540,7 +541,7 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
         }
 
         if (functions.length() != 0) {
-            String symbol = String.valueOf(((BLangTypeDefinition) typeDefinition).symbol);
+            String symbol = String.valueOf(typeDefinition.symbol);
             String moduleName = symbol.substring(symbol.indexOf("/") + 1);
             if (moduleName.contains(":")) {
                 moduleName = moduleName.substring(0, moduleName.indexOf(":"));

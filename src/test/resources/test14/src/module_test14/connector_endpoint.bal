@@ -14,14 +14,14 @@
 // specific language governing permissions and limitations
 // under the License.
 
-public type Client1 client object {
+public client class Client1 {
     public remote function createIssue()  returns Issue|error {
         return {};
     }
-};
+}
 
-public type Client2 client object {
+public client class Client2 {
     public remote function getIssue()  returns Issue|error {
         return {};
     }
-};
+}
