@@ -20,8 +20,9 @@ jobs:
         run: chmod +x gradlew
       - name: Build with Gradle
         env:
-          GITHUB_TOKEN: ${{ secrets.BALLERINA_STDLIB_TOKEN }}
           packageUser: ${{ github.actor }}
           packagePAT: ${{ secrets.BALLERINA_STDLIB_TOKEN }}
         run: |
+          export packageUser=packageUser
+          export packagePAT=packagePAT
           ./gradlew build
