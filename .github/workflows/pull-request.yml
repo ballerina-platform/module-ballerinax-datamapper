@@ -19,7 +19,4 @@ jobs:
         env:
           packageUser: ${{ github.actor }}
           packagePAT: ${{ secrets.BALLERINA_STDLIB_TOKEN }}
-        run: |
-          export packageUser=packageUser
-          export packagePAT=packagePAT
-          ./gradlew build
+        run: ./gradlew build
