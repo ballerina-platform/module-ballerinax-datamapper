@@ -1,3 +1,7 @@
+[![Build](https://github.com/ballerina-platform/module-ballerina-io/workflows/Build/badge.svg)]()
+[![Daily build](https://github.com/ballerina-platform/module-ballerina-io/workflows/Daily%20build/badge.svg)]()
+[![GitHub Last Commit](https://img.shields.io/github/last-commit/ballerina-platform/module-ballerina-io.svg)]()
+
 # Ballerina Data Mapper Extension
 The Ballerina Data Mapper extension is a compiler extension, which extracts an abstract representation of Ballerina connector actions and the associated types. 
 This compiler extension gets executed when compiling a Ballerina connector project. The extension generates two types of files by default. Note that 
