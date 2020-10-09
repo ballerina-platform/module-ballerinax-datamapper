@@ -1,6 +1,6 @@
-[![Build](https://github.com/ballerina-platform/module-ballerina-io/workflows/Build/badge.svg)]()
-[![Daily build](https://github.com/ballerina-platform/module-ballerina-io/workflows/Daily%20build/badge.svg)]()
-[![GitHub Last Commit](https://img.shields.io/github/last-commit/ballerina-platform/module-ballerina-io.svg)]()
+[![Build](https://github.com/ballerina-platform/module-ballerina-io/workflows/Build/badge.svg)](https://github.com/ballerina-platform/module-ballerinax-datamapper/actions?query=workflow%3ABuild)
+[![Daily build](https://github.com/ballerina-platform/module-ballerina-io/workflows/Daily%20build/badge.svg)](https://github.com/ballerina-platform/module-ballerinax-datamapper/actions?query=workflow%3A%22Daily+build%22)
+[![GitHub Last Commit](https://img.shields.io/github/last-commit/ballerina-platform/module-ballerina-io.svg)](https://github.com/ballerina-platform/module-ballerinax-datamapper/commits/master)
 
 # Ballerina Data Mapper Extension
 The Ballerina Data Mapper extension is a compiler extension, which extracts an abstract representation of Ballerina connector actions and the associated types. 
