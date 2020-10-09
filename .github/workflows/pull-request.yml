@@ -1,4 +1,4 @@
-name: PR build of Ballerina datamapper compiler extension
+name: PR build
 
 on: [push, pull_request]
 
