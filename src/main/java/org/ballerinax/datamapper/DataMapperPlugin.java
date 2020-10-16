@@ -54,6 +54,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -140,18 +142,22 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
                     DataMapperStructureVisitor visitor = new DataMapperStructureVisitor(structureMap);
                     visitor.visit(recordTypeDef);
                     String typeName = null;
+                    String serialized = null;
                     if (recordTypeDef.symbol instanceof  BRecordTypeSymbol) {
                         typeName = ((BRecordTypeSymbol) recordTypeDef.symbol).toString();
+                        String encodedTypeName = typeName;
+                        if (!hasAcceptedCharacters(encodedTypeName)) {
+                            encodedTypeName = encode(typeName);
+                        }
+                        try {
+                            serialized = new ObjectMapper().writeValueAsString(structureMap);
+                            serialized = "{\"" + encodedTypeName + "\":" + serialized + "}";
+                        } catch (JsonProcessingException e) {
+                            dlog.logDiagnostic(Diagnostic.Kind.ERROR, packageNode.getPosition(), e.getMessage());
+                        }
+                        structureMap.clear();
+                        this.typeInformationMap.put(encodedTypeName, serialized);
                     }
-                    String serialized = null;
-                    try {
-                        serialized = new ObjectMapper().writeValueAsString(structureMap);
-                        serialized = "{\"" + typeName + "\":" + serialized + "}";
-                    } catch (JsonProcessingException e) {
-                        dlog.logDiagnostic(Diagnostic.Kind.ERROR, packageNode.getPosition(), e.getMessage());
-                    }
-                    structureMap.clear();
-                    this.typeInformationMap.put(typeName, serialized);
                 }
             }
 
@@ -174,7 +180,7 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
             if (this.typeSet.contains(key)) {
                 String moduleDirectoryName = key.substring(key.indexOf("/") + 1);
                 moduleDirectoryName = moduleDirectoryName.substring(0, moduleDirectoryName.indexOf(":"));
-                String structureFileName = key.substring(key.lastIndexOf(":") + 1) + "_schema.json";
+                String structureFileName = encode(key.substring(key.lastIndexOf(":") + 1)) + "_schema.json";
                 Path targetStructureFilePath = Paths.get(projectSourceFolder, "src", moduleDirectoryName,
                         "resources", structureFileName);
                 String recordEntry = entry.getValue();
@@ -200,7 +206,7 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
         for (String key : secondaryItemsSet) {
             String moduleDirectoryName = key.substring(key.indexOf("/") + 1);
             moduleDirectoryName = moduleDirectoryName.substring(0, moduleDirectoryName.indexOf(":"));
-            String structureFileName = key.substring(key.lastIndexOf(":") + 1) + "_schema.json";
+            String structureFileName = encode(key.substring(key.lastIndexOf(":") + 1)) + "_schema.json";
             Path targetStructureFilePath = Paths.get(projectSourceFolder, "src", moduleDirectoryName,
                     "resources", structureFileName);
             String recordEntry = this.typeInformationMap.get(key);
@@ -481,12 +487,13 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
         while (iterator.hasNext()) {
             BLangFunction function =  iterator.next();
             if (function.flagSet.contains(Flag.REMOTE)) {
-                functions.append("{\"function\":{\"name\":\"" + function.name + "\",\"requiredParams\":[");
+                functions.append("{\"function\":{\"name\":\"" + encode(function.name.toString()) +
+                        "\",\"requiredParams\":[");
                 Iterator<BLangSimpleVariable> iterator2 = function.requiredParams.iterator();
                 while (iterator2.hasNext()) {
                     BLangSimpleVariable requiredParam = iterator2.next();
                     functions.append("{\"");
-                    functions.append(requiredParam.name);
+                    functions.append(encode(requiredParam.name.toString()));
                     functions.append("\":\"");
                     String typeVariable = requiredParam.symbol.type.toString();
                     functions.append(typeVariable);
@@ -553,8 +560,11 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
                 functionsJson = functionsJson.substring(0, functionsJson.lastIndexOf(","));
             }
 
-            functionsJson = "{\"" + symbol + "\" : " + "[" + functionsJson + "]}";
+            functionsJson = "{\"" + encode(symbol) + "\" : " + "[" + functionsJson + "]}";
             functions = new StringBuilder();
+            if (!hasAcceptedCharacters(name)) {
+                name = encode(name);
+            }
             String functionsFileName = name + "_functions.json";
             Path targetFunctionsFilePath = Paths.get(projectSourceFolder, "src", moduleName, "resources",
                     functionsFileName);
@@ -578,5 +588,20 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
         }
 
         return errorMessage;
+    }
+
+    private static boolean hasAcceptedCharacters(String input) {
+        return input != null && input.matches("^[a-zA-Z0-9_:/.]*$");
+    }
+
+    private String encode(String fileName) {
+        try {
+            String encodedFileName = URLEncoder.encode(fileName, "UTF-8");
+            return encodedFileName;
+        } catch (UnsupportedEncodingException e) {
+            dlog.logDiagnostic(Diagnostic.Kind.ERROR, nodePosition, e.getMessage());
+        }
+
+        return null;
     }
 }
