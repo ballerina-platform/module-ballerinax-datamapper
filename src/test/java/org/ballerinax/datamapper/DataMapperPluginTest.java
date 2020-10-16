@@ -208,6 +208,16 @@ public class DataMapperPluginTest {
         Assert.assertEquals(jsonFile.exists(), true);
     }
 
+    @Test
+    public void testHappyPathClientsWithOddClassAndFunctionNames() {
+        CompileResult result = BCompileUtil.compile("src/test/resources/test15", "module_test15",
+                CompilerPhase.COMPILER_PLUGIN);
+        Assert.assertEquals(result.getErrorCount(), 0);
+        File jsonFile = new File("src/test/resources/test15" +
+                "/src/module_test15/resources/%5C+%5C%2F%5C%3A%5C%40%5C%5B%5C%60%5C%7B%5C%7E_Connector_functions.json");
+        Assert.assertEquals(jsonFile.exists(), true);
+    }
+
     @AfterClass
     public void tearDown() throws IOException {
         //Cleanup the test projects if they already have generated json files
@@ -309,6 +319,11 @@ public class DataMapperPluginTest {
             Files.deleteIfExists(Paths.get(path + "Label_schema.json"));
             Files.deleteIfExists(Paths.get(path + "Client1_functions.json"));
             Files.deleteIfExists(Paths.get(path + "Client2_functions.json"));
+
+            path = "src/test/resources/test15/src/module_test15/resources/";
+
+            Files.deleteIfExists(Paths.get(path +
+                    "%5C+%5C%2F%5C%3A%5C%40%5C%5B%5C%60%5C%7B%5C%7E_Connector_functions.json"));
         } catch (IOException e) {
             Reporter.log("Error : " + e.getMessage(), true);
             throw e;
