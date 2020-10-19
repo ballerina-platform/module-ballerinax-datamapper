@@ -249,8 +249,9 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
         Path issueDataFilePath = Paths.get(projectSourceFolder, "src", moduleName, "resources");
         List<String> listOfSampleDataJSONFiles = null;
 
-        try (Stream<Path> walk = Files.walk(issueDataFilePath)) {
-            listOfSampleDataJSONFiles = walk.map(x -> x.toString())
+        try {
+            Stream<Path> files = Files.walk(issueDataFilePath);
+            listOfSampleDataJSONFiles = files.map(x -> x.toString())
                     .filter(f -> f.endsWith("_data.json")).collect(Collectors.toList());
 
             for (String path : listOfSampleDataJSONFiles) {
