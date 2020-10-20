@@ -61,13 +61,13 @@ public class DataMapperPluginTest {
         int i = 0;
         BAssertUtil.validateError(result, i++,
                 "Error: Type ballerinax/module_test2:0.1.0:Issue does not have an attribute named id2",
-                4, 13);
+                5, 14);
         BAssertUtil.validateError(result, i++,
                 "Error: Type ballerinax/module_test2:0.1.0:Creator does not have an attribute named " +
-                        "resourcePath5", 11, 17);
+                        "resourcePath5", 12, 18);
         BAssertUtil.validateError(result, i,
                 "Error: Type ballerinax/module_test2:0.1.0:Issue does not have an attribute named " +
-                        "bodyText3", 25, 13);
+                        "bodyText3", 26, 14);
     }
 
     @Test
@@ -77,7 +77,7 @@ public class DataMapperPluginTest {
         Assert.assertEquals(result.getErrorCount(), 1);
         BAssertUtil.validateError(result, 0,
                 "Error: Sample data provided for ballerinax/module_test3:0.1.0:Issue is different in " +
-                        "terms of attributes count", 9, 24);
+                        "terms of attributes count", 10, 25);
     }
 
     @Test
@@ -87,7 +87,7 @@ public class DataMapperPluginTest {
         Assert.assertEquals(result.getErrorCount(), 1);
         BAssertUtil.validateError(result, 0,
                 "Error: Sample data provided for ballerinax/module_test4:0.1.0:Issue is different in " +
-                        "terms of attributes count", 9, 24);
+                        "terms of attributes count", 10, 25);
     }
 
     @Test
@@ -103,9 +103,9 @@ public class DataMapperPluginTest {
                 CompilerPhase.COMPILER_PLUGIN);
                 Assert.assertEquals(result.getErrorCount(), 2);
         BAssertUtil.validateError(result, 0,
-                "Error: Type ballerinax/module_test6:0.1.0:Creator does not have an attribute named login2", 4, 13);
+                "Error: Type ballerinax/module_test6:0.1.0:Creator does not have an attribute named login2", 5, 14);
         BAssertUtil.validateError(result, 1,
-                "Error: Type ballerinax/module_test6:0.1.0:Creator does not have an attribute named avatarUrl3", 7, 13);
+                "Error: Type ballerinax/module_test6:0.1.0:Creator does not have an attribute named avatarUrl3", 8, 14);
     }
 
     @Test
@@ -138,7 +138,7 @@ public class DataMapperPluginTest {
         Assert.assertEquals(result.getErrorCount(), 1);
         BAssertUtil.validateError(result, 0,
                 "Error: Unexpected character (':' (code 58)): was expecting double-quote to start field name\n" +
-                        " at [Source: java.io.InputStreamReader@OBJECTREF; line: 4, column: 14]", 4, 14);
+                        " at [Source: java.io.InputStreamReader@OBJECTREF; line: 4, column: 14]", 5, 15);
     }
 
     @Test
