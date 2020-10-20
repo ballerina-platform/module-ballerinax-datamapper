@@ -260,8 +260,9 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
                 } catch (IOException e) {
                     JsonLocation location = parser.getCurrentLocation();
                     BDiagnosticSource source = new BDiagnosticSource(lastPackageNode.packageID , path);
-                    DiagnosticPos position = new DiagnosticPos(source, location.getLineNr(), location.getLineNr(),
-                            location.getColumnNr(), location.getColumnNr());
+                    DiagnosticPos position = new DiagnosticPos(source, location.getLineNr() - 1,
+                            location.getLineNr() - 1,
+                            location.getColumnNr() - 1, location.getColumnNr() - 1);
                     dlog.logDiagnostic(Diagnostic.Kind.ERROR, position, "Error: " +
                             getCustomizedErrorMessage(e));
                 }
@@ -361,9 +362,9 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
                         endLocation = parser.getCurrentLocation();
                         BDiagnosticSource source = new BDiagnosticSource(lastPackageNode.packageID , path);
                         startLocation = startLocationStack.pop();
-                        DiagnosticPos position = new DiagnosticPos(source, startLocation.getLineNr(),
-                                endLocation.getLineNr(),
-                                startLocation.getColumnNr(), endLocation.getColumnNr());
+                        DiagnosticPos position = new DiagnosticPos(source, startLocation.getLineNr() - 1,
+                                endLocation.getLineNr() - 1,
+                                startLocation.getColumnNr() - 1, endLocation.getColumnNr() - 1);
                         dlog.logDiagnostic(Diagnostic.Kind.ERROR, position, "Error: Sample data provided for " +
                                 typeName + " is different in terms of attributes count");
                     } else {
@@ -412,9 +413,9 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
                         if (typeRecord.get(typeName).get(name) == null) {
                             JsonLocation location = parser.getCurrentLocation();
                             BDiagnosticSource source = new BDiagnosticSource(lastPackageNode.packageID , path);
-                            DiagnosticPos position = new DiagnosticPos(source, location.getLineNr(),
-                                    location.getLineNr(),
-                                    location.getColumnNr() - (name.length() + 5), location.getColumnNr() - 3);
+                            DiagnosticPos position = new DiagnosticPos(source, location.getLineNr() - 1,
+                                    location.getLineNr() - 1,
+                                    location.getColumnNr() - (name.length() + 6), location.getColumnNr() - 4);
                             dlog.logDiagnostic(Diagnostic.Kind.ERROR, position, "Error: Type " + typeName +
                                     " does not have an attribute named " + name);
                         }
