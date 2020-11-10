@@ -26,6 +26,8 @@ import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import io.ballerina.tools.diagnostics.DiagnosticSeverity;
+import io.ballerina.tools.diagnostics.Location;
 import org.ballerinalang.compiler.plugins.AbstractCompilerPlugin;
 import org.ballerinalang.model.elements.Flag;
 import org.ballerinalang.model.elements.PackageID;
@@ -33,9 +35,9 @@ import org.ballerinalang.model.tree.NodeKind;
 import org.ballerinalang.model.tree.PackageNode;
 import org.ballerinalang.model.tree.TopLevelNode;
 import org.ballerinalang.project.Project;
-import org.ballerinalang.util.diagnostic.Diagnostic;
 import org.ballerinalang.util.diagnostic.DiagnosticLog;
 import org.ballerinax.datamapper.util.Utils;
+import org.wso2.ballerinalang.compiler.diagnostic.BLangDiagnosticLocation;
 import org.wso2.ballerinalang.compiler.semantics.model.symbols.BRecordTypeSymbol;
 import org.wso2.ballerinalang.compiler.tree.BLangClassDefinition;
 import org.wso2.ballerinalang.compiler.tree.BLangFunction;
@@ -45,8 +47,6 @@ import org.wso2.ballerinalang.compiler.tree.BLangTypeDefinition;
 import org.wso2.ballerinalang.compiler.tree.types.BLangType;
 import org.wso2.ballerinalang.compiler.tree.types.BLangUnionTypeNode;
 import org.wso2.ballerinalang.compiler.util.CompilerContext;
-import org.wso2.ballerinalang.compiler.util.diagnotic.BDiagnosticSource;
-import org.wso2.ballerinalang.compiler.util.diagnotic.DiagnosticPos;
 import org.wso2.ballerinalang.util.Flags;
 
 import java.io.FileInputStream;
@@ -81,7 +81,7 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
     private HashMap<String, String> typeInformationMap;
     private HashSet<String> typeSet;
     private StringBuilder functions;
-    private Diagnostic.DiagnosticPosition nodePosition;
+    private Location nodePosition;
     private BLangPackage lastPackageNode;
     private String projectSourceFolder;
     private boolean clientFlag;
@@ -134,7 +134,7 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
                     try {
                         extractFunctionCalls((BLangClassDefinition) topLevelNode);
                     } catch (Exception e) {
-                        dlog.logDiagnostic(Diagnostic.Kind.ERROR, packageNode.getPosition(), e.getMessage());
+                        dlog.logDiagnostic(DiagnosticSeverity.ERROR, packageNode.getPosition(), e.getMessage());
                     }
                 } else if (topLevelNode.getKind() == NodeKind.TYPE_DEFINITION &&
                         ((BLangTypeDefinition) topLevelNode).typeNode.getKind() == NodeKind.RECORD_TYPE) {
@@ -156,7 +156,7 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
                             serialized = new ObjectMapper().writeValueAsString(structureMap);
                             serialized = "{\"" + encodedTypeName + "\":" + serialized + "}";
                         } catch (JsonProcessingException e) {
-                            dlog.logDiagnostic(Diagnostic.Kind.ERROR, packageNode.getPosition(), e.getMessage());
+                            dlog.logDiagnostic(DiagnosticSeverity.ERROR, packageNode.getPosition(), e.getMessage());
                         }
                         structureMap.clear();
                         this.typeInformationMap.put(encodedTypeName, serialized);
@@ -203,7 +203,7 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
                     Utils.writeToFile(recordEntry, targetStructureFilePath);
                     itemsWrittenSet.add(key);
                 } catch (IOException e) {
-                    dlog.logDiagnostic(Diagnostic.Kind.ERROR, nodePosition, e.getMessage());
+                    dlog.logDiagnostic(DiagnosticSeverity.ERROR, nodePosition, e.getMessage());
                 }
             }
         }
@@ -227,7 +227,7 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
             try {
                 Utils.writeToFile(recordEntry, targetStructureFilePath);
             } catch (IOException e) {
-                dlog.logDiagnostic(Diagnostic.Kind.ERROR, nodePosition, e.getMessage());
+                dlog.logDiagnostic(DiagnosticSeverity.ERROR, nodePosition, e.getMessage());
             }
         }
 
@@ -259,11 +259,10 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
                     readDataArray(path);
                 } catch (IOException e) {
                     JsonLocation location = parser.getCurrentLocation();
-                    BDiagnosticSource source = new BDiagnosticSource(lastPackageNode.packageID , path);
-                    DiagnosticPos position = new DiagnosticPos(source, location.getLineNr() - 1,
-                            location.getLineNr() - 1,
+                    Location position = new BLangDiagnosticLocation(path,
+                            location.getLineNr() - 1, location.getLineNr() - 1,
                             location.getColumnNr() - 1, location.getColumnNr() - 1);
-                    dlog.logDiagnostic(Diagnostic.Kind.ERROR, position, "Error: " +
+                    dlog.logDiagnostic(DiagnosticSeverity.ERROR, position, "Error: " +
                             getCustomizedErrorMessage(e));
                 }
             }
@@ -295,7 +294,7 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
                 Utils.writeToFile(sb.toString(), targetStructureFilePath);
             }
         } catch (IOException e) {
-            dlog.logDiagnostic(Diagnostic.Kind.ERROR, nodePosition, e.getMessage());
+            dlog.logDiagnostic(DiagnosticSeverity.ERROR, nodePosition, e.getMessage());
         }
     }
 
@@ -360,12 +359,11 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
 
                     if ((expectedNumberOfAttributes != attributeCounter) && (counter != 1)) {
                         endLocation = parser.getCurrentLocation();
-                        BDiagnosticSource source = new BDiagnosticSource(lastPackageNode.packageID , path);
                         startLocation = startLocationStack.pop();
-                        DiagnosticPos position = new DiagnosticPos(source, startLocation.getLineNr() - 1,
-                                endLocation.getLineNr() - 1,
+                        Location position = new BLangDiagnosticLocation(path,
+                                startLocation.getLineNr() - 1, endLocation.getLineNr() - 1,
                                 startLocation.getColumnNr() - 1, endLocation.getColumnNr() - 1);
-                        dlog.logDiagnostic(Diagnostic.Kind.ERROR, position, "Error: Sample data provided for " +
+                        dlog.logDiagnostic(DiagnosticSeverity.ERROR, position, "Error: Sample data provided for " +
                                 typeName + " is different in terms of attributes count");
                     } else {
                         if (!typeStack.isEmpty()) {
@@ -412,11 +410,10 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
                     } else if (counter == 2) {
                         if (typeRecord.get(typeName).get(name) == null) {
                             JsonLocation location = parser.getCurrentLocation();
-                            BDiagnosticSource source = new BDiagnosticSource(lastPackageNode.packageID , path);
-                            DiagnosticPos position = new DiagnosticPos(source, location.getLineNr() - 1,
-                                    location.getLineNr() - 1,
+                            Location position = new BLangDiagnosticLocation(path,
+                                    location.getLineNr() - 1, location.getLineNr() - 1,
                                     location.getColumnNr() - (name.length() + 6), location.getColumnNr() - 4);
-                            dlog.logDiagnostic(Diagnostic.Kind.ERROR, position, "Error: Type " + typeName +
+                            dlog.logDiagnostic(DiagnosticSeverity.ERROR, position, "Error: Type " + typeName +
                                     " does not have an attribute named " + name);
                         }
                         attributeCounter++;
@@ -448,11 +445,10 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
 
                         if (!typeRecord.get(typeName).has(name)) {
                             JsonLocation location = parser.getCurrentLocation();
-                            BDiagnosticSource source = new BDiagnosticSource(lastPackageNode.packageID , path);
-                            DiagnosticPos position = new DiagnosticPos(source, location.getLineNr(),
-                                    location.getLineNr(),
+                            Location position = new BLangDiagnosticLocation(path,
+                                    location.getLineNr(), location.getLineNr(),
                                     location.getColumnNr() - (name.length() + 5), location.getColumnNr() - 3);
-                            dlog.logDiagnostic(Diagnostic.Kind.ERROR, position, "Error: Type " +
+                            dlog.logDiagnostic(DiagnosticSeverity.ERROR, position, "Error: Type " +
                                     typeName + " does not have an attribute named " + name);
                         }
 
@@ -479,7 +475,7 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
                 case VALUE_NULL:
                     break;
                 default:
-                    dlog.logDiagnostic(Diagnostic.Kind.ERROR, nodePosition, "Error: Unexpected JSON token value: "
+                    dlog.logDiagnostic(DiagnosticSeverity.ERROR, nodePosition, "Error: Unexpected JSON token value: "
                             + jsonToken);
                     break;
             }
@@ -620,7 +616,7 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
             String encodedFileName = URLEncoder.encode(fileName, "UTF-8");
             return encodedFileName;
         } catch (UnsupportedEncodingException e) {
-            dlog.logDiagnostic(Diagnostic.Kind.ERROR, nodePosition, e.getMessage());
+            dlog.logDiagnostic(DiagnosticSeverity.ERROR, nodePosition, e.getMessage());
         }
 
         return null;

@@ -1,0 +1,9 @@
+<FindBugsFilter>
+    <Match>
+    <Bug pattern="URF_UNREAD_FIELD"/>
+    <Bug pattern="URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"/>
+    </Match>
+    <Match>
+        <Package name="org.ballerinax.datamapper" />
+    </Match>
+</FindBugsFilter>
