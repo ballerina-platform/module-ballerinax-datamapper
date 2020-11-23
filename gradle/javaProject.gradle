@@ -30,6 +30,7 @@ dependencies {
 }
 
 def bDistribution = file("$project.buildDir/extracted-distribution/jballerina-tools-${ballerinaLangVersion}")
+def packageOrg = "ballerina"
 
 task unzip {
     doLast {
@@ -81,7 +82,16 @@ task copyStdlibs(type: Copy) {
         into("cache/jar/") {
             from "${artifactExtractedPath}/caches/jar"
         }
+        into("repo/balo") {
+            from "${artifactExtractedPath}/balo/"
+        }
     }
+
+//    copy {
+//        def artifactExtractedPath = "${project.buildDir}/extracted-distribution/"
+//        from file("$project.projectDir/target/balo")
+//        into file("${artifactExtractedPath}/balo/${packageOrg}/${packageName}/${tomlVersion}")
+//    }
 }
 
 task copyLib(type: Copy) {

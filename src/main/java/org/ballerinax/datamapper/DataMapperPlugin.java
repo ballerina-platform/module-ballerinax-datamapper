@@ -28,13 +28,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.ballerina.tools.diagnostics.DiagnosticSeverity;
 import io.ballerina.tools.diagnostics.Location;
+import org.ballerinalang.compiler.CompilerOptionName;
 import org.ballerinalang.compiler.plugins.AbstractCompilerPlugin;
 import org.ballerinalang.model.elements.Flag;
 import org.ballerinalang.model.elements.PackageID;
 import org.ballerinalang.model.tree.NodeKind;
 import org.ballerinalang.model.tree.PackageNode;
 import org.ballerinalang.model.tree.TopLevelNode;
-import org.ballerinalang.project.Project;
 import org.ballerinalang.util.diagnostic.DiagnosticLog;
 import org.ballerinax.datamapper.util.Utils;
 import org.wso2.ballerinalang.compiler.diagnostic.BLangDiagnosticLocation;
@@ -47,6 +47,7 @@ import org.wso2.ballerinalang.compiler.tree.BLangTypeDefinition;
 import org.wso2.ballerinalang.compiler.tree.types.BLangType;
 import org.wso2.ballerinalang.compiler.tree.types.BLangUnionTypeNode;
 import org.wso2.ballerinalang.compiler.util.CompilerContext;
+import org.wso2.ballerinalang.compiler.util.CompilerOptions;
 import org.wso2.ballerinalang.util.Flags;
 
 import java.io.FileInputStream;
@@ -89,10 +90,13 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
     private JsonParser parser;
     private String currentTypeStructure;
     private CompilerContext context = null;
+    private String projectDirectory;
 
     @Override
     public void setCompilerContext(CompilerContext ctx) {
         context = ctx;
+        CompilerOptions options = CompilerOptions.getInstance(ctx);
+        projectDirectory = options.get(CompilerOptionName.PROJECT_DIR);
     }
 
     @Override
@@ -106,11 +110,11 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
 
     @Override
     public void process(PackageNode packageNode) {
-        Project project = context.get(Project.PROJECT_KEY);
-
-        if (!project.isModuleExists(((BLangPackage) packageNode).packageID)) {
-            return;
-        }
+//        Project project = context.get(Project.PROJECT_KEY);
+//
+//        if (!project.isModuleExists(((BLangPackage) packageNode).packageID)) {
+//            return;
+//        }
 
         for (TopLevelNode node : ((BLangPackage) packageNode).topLevelNodes) {
             if (node instanceof BLangClassDefinition) {
@@ -122,8 +126,7 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
         }
 
         if (clientFlag) {
-            String pkgRoot = ((BLangPackage) packageNode).repos.resolve(((BLangPackage) packageNode).packageID).inputs.
-                    get(0).toString();
+            String pkgRoot = projectDirectory;
             projectSourceFolder = pkgRoot.substring(0, pkgRoot.lastIndexOf("/"));
             projectSourceFolder = projectSourceFolder.substring(0, projectSourceFolder.lastIndexOf("/"));
             projectSourceFolder = projectSourceFolder.substring(0, projectSourceFolder.lastIndexOf("/"));
@@ -187,8 +190,9 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
                     splitCharacter = URL_ENCODED_COLON;
                 }
                 moduleDirectoryName = moduleDirectoryName.substring(0, moduleDirectoryName.indexOf(splitCharacter));
+                moduleDirectoryName = moduleDirectoryName.substring(moduleDirectoryName.indexOf(".") + 1);
                 String structureFileName = encode(key.substring(key.lastIndexOf(splitCharacter) + 1)) + "_schema.json";
-                Path targetStructureFilePath = Paths.get(projectSourceFolder, "src", moduleDirectoryName,
+                Path targetStructureFilePath = Paths.get(projectDirectory, "modules", moduleDirectoryName,
                         "resources", structureFileName);
                 String recordEntry = entry.getValue();
 
@@ -219,8 +223,9 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
             }
 
             moduleDirectoryName = moduleDirectoryName.substring(0, moduleDirectoryName.indexOf(splitCharacter));
+            moduleDirectoryName = moduleDirectoryName.substring(moduleDirectoryName.indexOf(".") + 1);
             String structureFileName = encode(key.substring(key.lastIndexOf(splitCharacter) + 1)) + "_schema.json";
-            Path targetStructureFilePath = Paths.get(projectSourceFolder, "src", moduleDirectoryName,
+            Path targetStructureFilePath = Paths.get(projectDirectory, "modules", moduleDirectoryName,
                     "resources", structureFileName);
             String recordEntry = this.typeInformationMap.get(key);
 
@@ -237,6 +242,7 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
             String moduleName = null;
             moduleName = key.substring(key.indexOf("/") + 1);
             moduleName = moduleName.substring(0, moduleName.indexOf(":"));
+            moduleName = moduleName.substring(moduleName.indexOf(".") + 1);
             listOfModuleNames.add(moduleName);
         }
 
@@ -246,7 +252,7 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
     }
 
     private void processSampleDataFiles(String moduleName) {
-        Path issueDataFilePath = Paths.get(projectSourceFolder, "src", moduleName, "resources");
+        Path issueDataFilePath = Paths.get(projectDirectory, "modules", moduleName, "resources");
         List<String> listOfSampleDataJSONFiles = null;
 
         try {
@@ -587,7 +593,8 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
             name = encode(name);
 
             String functionsFileName = name + "_functions.json";
-            Path targetFunctionsFilePath = Paths.get(projectSourceFolder, "src", moduleName, "resources",
+            moduleName = moduleName.substring(moduleName.indexOf(".") + 1);
+            Path targetFunctionsFilePath = Paths.get(projectDirectory, "modules", moduleName, "resources",
                     functionsFileName);
             Utils.writeToFile(functionsJson, targetFunctionsFilePath);
         } else {
