@@ -1,0 +1,32 @@
+{
+    "ballerinax/test10.module_test10:0.1.0:Issue": [
+        {
+            "id": "MDU6SXNzdWU2MDAwMzQwOTc=",
+            "bodyText": "Test5",
+            "closed": "false",
+            "closedAt": "",
+            "createdAt": "2020-04-15T05:36:03Z",
+            "author": null,
+            "labels": [
+                {
+                    "id": "label_id1",
+                    "name": "label_name1",
+                    "description": "label_description1",
+                    "color": "label_color1"
+                },
+                {
+                    "id": "label_id2",
+                    "name": "label_name2",
+                    "description": "label_description2",
+                    "color": "label_color2"
+                }
+            ],
+            "number": "5",
+            "state": "OPEN",
+            "title": "Test5",
+            "updatedAt": "2020-04-15T05:36:03Z",
+            "url": "https://github.com/github-jira/demo-github/issues/5",
+            "assignees": []
+        }
+    ]
+}

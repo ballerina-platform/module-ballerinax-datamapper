@@ -26,16 +26,18 @@ import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import io.ballerina.tools.diagnostics.DiagnosticSeverity;
 import io.ballerina.tools.diagnostics.Location;
+import org.ballerinalang.compiler.CompilerOptionName;
 import org.ballerinalang.compiler.plugins.AbstractCompilerPlugin;
 import org.ballerinalang.model.elements.Flag;
 import org.ballerinalang.model.elements.PackageID;
 import org.ballerinalang.model.tree.NodeKind;
 import org.ballerinalang.model.tree.PackageNode;
 import org.ballerinalang.model.tree.TopLevelNode;
-import org.ballerinalang.project.Project;
 import org.ballerinalang.util.diagnostic.DiagnosticLog;
+import org.ballerinax.datamapper.diagnostic.DataMapperDiagnosticLog;
+import org.ballerinax.datamapper.diagnostic.DiagnosticErrorCode;
+import org.ballerinax.datamapper.exceptions.DataMapperException;
 import org.ballerinax.datamapper.util.Utils;
 import org.wso2.ballerinalang.compiler.diagnostic.BLangDiagnosticLocation;
 import org.wso2.ballerinalang.compiler.semantics.model.symbols.BRecordTypeSymbol;
@@ -47,6 +49,7 @@ import org.wso2.ballerinalang.compiler.tree.BLangTypeDefinition;
 import org.wso2.ballerinalang.compiler.tree.types.BLangType;
 import org.wso2.ballerinalang.compiler.tree.types.BLangUnionTypeNode;
 import org.wso2.ballerinalang.compiler.util.CompilerContext;
+import org.wso2.ballerinalang.compiler.util.CompilerOptions;
 import org.wso2.ballerinalang.util.Flags;
 
 import java.io.FileInputStream;
@@ -76,7 +79,7 @@ import java.util.stream.Stream;
  */
 public class DataMapperPlugin extends AbstractCompilerPlugin {
     public static final String URL_ENCODED_COLON = "%3A";
-    private DiagnosticLog dlog;
+    private DataMapperDiagnosticLog dlog;
     private HashMap<String, ArrayList<JsonNode>> sampleDataMap;
     private HashMap<String, String> typeInformationMap;
     private HashSet<String> typeSet;
@@ -89,15 +92,18 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
     private JsonParser parser;
     private String currentTypeStructure;
     private CompilerContext context = null;
+    private String projectDirectory;
 
     @Override
     public void setCompilerContext(CompilerContext ctx) {
         context = ctx;
+        CompilerOptions options = CompilerOptions.getInstance(ctx);
+        projectDirectory = options.get(CompilerOptionName.PROJECT_DIR);
+        this.dlog = DataMapperDiagnosticLog.getInstance(ctx);
     }
 
     @Override
     public void init(DiagnosticLog diagnosticLog) {
-        this.dlog = diagnosticLog;
         this.sampleDataMap = new HashMap<String, ArrayList<JsonNode>>();
         this.typeInformationMap = new HashMap<String, String>();
         this.typeSet = new HashSet<String>();
@@ -106,12 +112,6 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
 
     @Override
     public void process(PackageNode packageNode) {
-        Project project = context.get(Project.PROJECT_KEY);
-
-        if (!project.isModuleExists(((BLangPackage) packageNode).packageID)) {
-            return;
-        }
-
         for (TopLevelNode node : ((BLangPackage) packageNode).topLevelNodes) {
             if (node instanceof BLangClassDefinition) {
                 if ((((BLangClassDefinition) node).symbol.flags & Flags.CLIENT) == Flags.CLIENT) {
@@ -122,19 +122,14 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
         }
 
         if (clientFlag) {
-            String pkgRoot = ((BLangPackage) packageNode).repos.resolve(((BLangPackage) packageNode).packageID).inputs.
-                    get(0).toString();
-            projectSourceFolder = pkgRoot.substring(0, pkgRoot.lastIndexOf("/"));
-            projectSourceFolder = projectSourceFolder.substring(0, projectSourceFolder.lastIndexOf("/"));
-            projectSourceFolder = projectSourceFolder.substring(0, projectSourceFolder.lastIndexOf("/"));
-
+            dlog.setCurrentPackageId(((BLangPackage) packageNode).packageID);
             for (TopLevelNode topLevelNode : ((BLangPackage) packageNode).topLevelNodes) {
                 if (topLevelNode.getKind() == NodeKind.CLASS_DEFN &&
                         (((BLangClassDefinition) topLevelNode).symbol.flags & Flags.CLIENT) == Flags.CLIENT) {
                     try {
                         extractFunctionCalls((BLangClassDefinition) topLevelNode);
                     } catch (Exception e) {
-                        dlog.logDiagnostic(DiagnosticSeverity.ERROR, packageNode.getPosition(), e.getMessage());
+                        throw new DataMapperException(e);
                     }
                 } else if (topLevelNode.getKind() == NodeKind.TYPE_DEFINITION &&
                         ((BLangTypeDefinition) topLevelNode).typeNode.getKind() == NodeKind.RECORD_TYPE) {
@@ -156,7 +151,8 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
                             serialized = new ObjectMapper().writeValueAsString(structureMap);
                             serialized = "{\"" + encodedTypeName + "\":" + serialized + "}";
                         } catch (JsonProcessingException e) {
-                            dlog.logDiagnostic(DiagnosticSeverity.ERROR, packageNode.getPosition(), e.getMessage());
+                            dlog.error(packageNode.getPosition(),
+                                    DiagnosticErrorCode.ERROR_INVALID_JSON_CONTENT, e.getMessage());
                         }
                         structureMap.clear();
                         this.typeInformationMap.put(encodedTypeName, serialized);
@@ -187,8 +183,9 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
                     splitCharacter = URL_ENCODED_COLON;
                 }
                 moduleDirectoryName = moduleDirectoryName.substring(0, moduleDirectoryName.indexOf(splitCharacter));
+                moduleDirectoryName = moduleDirectoryName.substring(moduleDirectoryName.indexOf(".") + 1);
                 String structureFileName = encode(key.substring(key.lastIndexOf(splitCharacter) + 1)) + "_schema.json";
-                Path targetStructureFilePath = Paths.get(projectSourceFolder, "src", moduleDirectoryName,
+                Path targetStructureFilePath = Paths.get(projectDirectory, "modules", moduleDirectoryName,
                         "resources", structureFileName);
                 String recordEntry = entry.getValue();
 
@@ -203,7 +200,7 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
                     Utils.writeToFile(recordEntry, targetStructureFilePath);
                     itemsWrittenSet.add(key);
                 } catch (IOException e) {
-                    dlog.logDiagnostic(DiagnosticSeverity.ERROR, nodePosition, e.getMessage());
+                    throw new DataMapperException(e);
                 }
             }
         }
@@ -219,15 +216,16 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
             }
 
             moduleDirectoryName = moduleDirectoryName.substring(0, moduleDirectoryName.indexOf(splitCharacter));
+            moduleDirectoryName = moduleDirectoryName.substring(moduleDirectoryName.indexOf(".") + 1);
             String structureFileName = encode(key.substring(key.lastIndexOf(splitCharacter) + 1)) + "_schema.json";
-            Path targetStructureFilePath = Paths.get(projectSourceFolder, "src", moduleDirectoryName,
+            Path targetStructureFilePath = Paths.get(projectDirectory, "modules", moduleDirectoryName,
                     "resources", structureFileName);
             String recordEntry = this.typeInformationMap.get(key);
 
             try {
                 Utils.writeToFile(recordEntry, targetStructureFilePath);
             } catch (IOException e) {
-                dlog.logDiagnostic(DiagnosticSeverity.ERROR, nodePosition, e.getMessage());
+                throw new DataMapperException(e);
             }
         }
 
@@ -237,6 +235,7 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
             String moduleName = null;
             moduleName = key.substring(key.indexOf("/") + 1);
             moduleName = moduleName.substring(0, moduleName.indexOf(":"));
+            moduleName = moduleName.substring(moduleName.indexOf(".") + 1);
             listOfModuleNames.add(moduleName);
         }
 
@@ -246,7 +245,7 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
     }
 
     private void processSampleDataFiles(String moduleName) {
-        Path issueDataFilePath = Paths.get(projectSourceFolder, "src", moduleName, "resources");
+        Path issueDataFilePath = Paths.get(projectDirectory, "modules", moduleName, "resources");
         List<String> listOfSampleDataJSONFiles = null;
 
         try {
@@ -262,7 +261,7 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
                     Location position = new BLangDiagnosticLocation(path,
                             location.getLineNr() - 1, location.getLineNr() - 1,
                             location.getColumnNr() - 1, location.getColumnNr() - 1);
-                    dlog.logDiagnostic(DiagnosticSeverity.ERROR, position, "Error: " +
+                    dlog.error(position, DiagnosticErrorCode.ERROR_INVALID_JSON_CONTENT,
                             getCustomizedErrorMessage(e));
                 }
             }
@@ -274,8 +273,9 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
 
                 String moduleDirectoryName = key.substring(key.indexOf("/") + 1);
                 moduleDirectoryName = moduleDirectoryName.substring(0, moduleDirectoryName.indexOf(":"));
+                moduleDirectoryName = moduleDirectoryName.substring(moduleDirectoryName.indexOf(".") + 1);
                 String structureFileName = key.substring(key.lastIndexOf(":") + 1) + "_data.json";
-                targetStructureFilePath = Paths.get(projectSourceFolder, "src", moduleDirectoryName,
+                targetStructureFilePath = Paths.get(projectDirectory, "modules", moduleDirectoryName,
                         "resources", structureFileName);
 
                 sb.append("{\"");
@@ -294,7 +294,7 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
                 Utils.writeToFile(sb.toString(), targetStructureFilePath);
             }
         } catch (IOException e) {
-            dlog.logDiagnostic(DiagnosticSeverity.ERROR, nodePosition, e.getMessage());
+            throw new DataMapperException(e);
         }
     }
 
@@ -363,8 +363,8 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
                         Location position = new BLangDiagnosticLocation(path,
                                 startLocation.getLineNr() - 1, endLocation.getLineNr() - 1,
                                 startLocation.getColumnNr() - 1, endLocation.getColumnNr() - 1);
-                        dlog.logDiagnostic(DiagnosticSeverity.ERROR, position, "Error: Sample data provided for " +
-                                typeName + " is different in terms of attributes count");
+                        dlog.error(position, DiagnosticErrorCode.ERROR_INVALID_ATTRIBUTE_COUNT,
+                                expectedNumberOfAttributes, attributeCounter);
                     } else {
                         if (!typeStack.isEmpty()) {
                             ArrayList<JsonNode> lst = sampleDataMap.getOrDefault(typeName, new ArrayList<JsonNode>());
@@ -413,8 +413,7 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
                             Location position = new BLangDiagnosticLocation(path,
                                     location.getLineNr() - 1, location.getLineNr() - 1,
                                     location.getColumnNr() - (name.length() + 6), location.getColumnNr() - 4);
-                            dlog.logDiagnostic(DiagnosticSeverity.ERROR, position, "Error: Type " + typeName +
-                                    " does not have an attribute named " + name);
+                            dlog.error(position, DiagnosticErrorCode.ERROR_INVALID_ATTRIBUTE_NAME, typeName, name);
                         }
                         attributeCounter++;
                     } else {
@@ -448,8 +447,7 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
                             Location position = new BLangDiagnosticLocation(path,
                                     location.getLineNr(), location.getLineNr(),
                                     location.getColumnNr() - (name.length() + 5), location.getColumnNr() - 3);
-                            dlog.logDiagnostic(DiagnosticSeverity.ERROR, position, "Error: Type " +
-                                    typeName + " does not have an attribute named " + name);
+                            dlog.error(position, DiagnosticErrorCode.ERROR_INVALID_ATTRIBUTE_NAME, typeName, name);
                         }
 
                         counter--;
@@ -475,8 +473,7 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
                 case VALUE_NULL:
                     break;
                 default:
-                    dlog.logDiagnostic(DiagnosticSeverity.ERROR, nodePosition, "Error: Unexpected JSON token value: "
-                            + jsonToken);
+                    dlog.error(nodePosition, DiagnosticErrorCode.ERROR_INVALID_JSON_TOKEN, jsonToken);
                     break;
             }
         }
@@ -587,7 +584,8 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
             name = encode(name);
 
             String functionsFileName = name + "_functions.json";
-            Path targetFunctionsFilePath = Paths.get(projectSourceFolder, "src", moduleName, "resources",
+            moduleName = moduleName.substring(moduleName.indexOf(".") + 1);
+            Path targetFunctionsFilePath = Paths.get(projectDirectory, "modules", moduleName, "resources",
                     functionsFileName);
             Utils.writeToFile(functionsJson, targetFunctionsFilePath);
         } else {
@@ -616,9 +614,7 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
             String encodedFileName = URLEncoder.encode(fileName, "UTF-8");
             return encodedFileName;
         } catch (UnsupportedEncodingException e) {
-            dlog.logDiagnostic(DiagnosticSeverity.ERROR, nodePosition, e.getMessage());
+            throw new DataMapperException(e);
         }
-
-        return null;
     }
 }

@@ -18,10 +18,11 @@
 
 package org.ballerinax.datamapper;
 
-import org.ballerinalang.compiler.CompilerPhase;
-import org.ballerinalang.test.util.BAssertUtil;
-import org.ballerinalang.test.util.BCompileUtil;
-import org.ballerinalang.test.util.CompileResult;
+import io.ballerina.tools.diagnostics.Diagnostic;
+import io.ballerina.tools.diagnostics.DiagnosticSeverity;
+import org.ballerinalang.test.BAssertUtil;
+import org.ballerinalang.test.BCompileUtil;
+import org.ballerinalang.test.CompileResult;
 import org.testng.Assert;
 import org.testng.Reporter;
 import org.testng.annotations.AfterClass;
@@ -38,183 +39,234 @@ import java.nio.file.Paths;
 public class DataMapperPluginTest {
     @Test
     public void testHappyPath() {
-        CompileResult result = BCompileUtil.compile("src/test/resources/test1", "module_test1",
-                CompilerPhase.COMPILER_PLUGIN);
-        File jsonFile = new File("src/test/resources/test1/src/module_test1/resources/Assignee_schema.json");
+        CompileResult result = BCompileUtil.compile("test1/modules/module_test1");
+        File jsonFile = new File("src/test/resources/test1/modules/module_test1/resources/Assignee_schema.json");
         Assert.assertEquals(jsonFile.exists(), true);
-        jsonFile = new File("src/test/resources/test1/src/module_test1/resources/Client_functions.json");
+        jsonFile = new File("src/test/resources/test1/modules/module_test1/resources/Client_functions.json");
         Assert.assertEquals(jsonFile.exists(), true);
-        jsonFile = new File("src/test/resources/test1/src/module_test1/resources/Creator_schema.json");
+        jsonFile = new File("src/test/resources/test1/modules/module_test1/resources/Creator_schema.json");
         Assert.assertEquals(jsonFile.exists(), true);
-        jsonFile = new File("src/test/resources/test1/src/module_test1/resources/Issue_schema.json");
+        jsonFile = new File("src/test/resources/test1/modules/module_test1/resources/Issue_schema.json");
         Assert.assertEquals(jsonFile.exists(), true);
-        jsonFile = new File("src/test/resources/test1/src/module_test1/resources/Label_schema.json");
+        jsonFile = new File("src/test/resources/test1/modules/module_test1/resources/Label_schema.json");
         Assert.assertEquals(jsonFile.exists(), true);
         Assert.assertEquals(result.getErrorCount(), 0);
     }
 
     @Test
     public void testErrorNegativeThreeFieldsWithDifferentNames() {
-        CompileResult result = BCompileUtil.compile("src/test/resources/test2", "module_test2",
-                CompilerPhase.COMPILER_PLUGIN);
+        CompileResult result = BCompileUtil.compile("test2/modules/module_test2");
         Assert.assertEquals(result.getErrorCount(), 3);
         int i = 0;
-        BAssertUtil.validateError(result, i++,
-                "Error: Type ballerinax/module_test2:0.1.0:Issue does not have an attribute named id2",
+        int j = 0;
+        Diagnostic[] diagnostics = result.getDiagnostics();
+        int[] diagnosticIndex = new int[result.getErrorCount()];
+
+        for (Diagnostic diag : diagnostics) {
+            if (diag.diagnosticInfo().severity() == DiagnosticSeverity.ERROR) {
+                diagnosticIndex[j] = i;
+                j++;
+            }
+            i++;
+        }
+        j = 0;
+        BAssertUtil.validateError(result, diagnosticIndex[j++],
+                "type 'ballerinax/test2.module_test2:0.1.0:Issue' does not have an attribute named 'id2'",
                 4, 13);
-        BAssertUtil.validateError(result, i++,
-                "Error: Type ballerinax/module_test2:0.1.0:Creator does not have an attribute named " +
-                        "resourcePath5", 11, 17);
-        BAssertUtil.validateError(result, i,
-                "Error: Type ballerinax/module_test2:0.1.0:Issue does not have an attribute named " +
-                        "bodyText3", 25, 13);
+        BAssertUtil.validateError(result, diagnosticIndex[j++],
+                "type 'ballerinax/test2.module_test2:0.1.0:Creator' does not have an attribute " +
+                        "named 'resourcePath5'", 11, 17);
+        BAssertUtil.validateError(result, diagnosticIndex[j],
+                "type 'ballerinax/test2.module_test2:0.1.0:Issue' does not have an attribute " +
+                        "named 'bodyText3'", 25, 13);
     }
 
     @Test
     public void testErrorNegativeMissingOneField() {
-        CompileResult result = BCompileUtil.compile("src/test/resources/test3", "module_test3",
-                CompilerPhase.COMPILER_PLUGIN);
+        CompileResult result = BCompileUtil.compile("test3/modules/module_test3");
         Assert.assertEquals(result.getErrorCount(), 1);
-        BAssertUtil.validateError(result, 0,
-                "Error: Sample data provided for ballerinax/module_test3:0.1.0:Issue is different in " +
-                        "terms of attributes count", 9, 24);
+
+        int i = 0;
+        Diagnostic[] diagnostics = result.getDiagnostics();
+        int diagnosticIndex = 0;
+
+        for (Diagnostic diag : diagnostics) {
+            if (diag.diagnosticInfo().severity() == DiagnosticSeverity.ERROR) {
+                diagnosticIndex = i;
+            }
+            i++;
+        }
+
+        BAssertUtil.validateError(result, diagnosticIndex,
+                "invalid attribute count: expected '13', found '12'", 9, 18);
     }
 
     @Test
     public void testErrorNegativeMissingTwoFields() {
-        CompileResult result = BCompileUtil.compile("src/test/resources/test4", "module_test4",
-                CompilerPhase.COMPILER_PLUGIN);
+        CompileResult result = BCompileUtil.compile("test4/modules/module_test4");
         Assert.assertEquals(result.getErrorCount(), 1);
-        BAssertUtil.validateError(result, 0,
-                "Error: Sample data provided for ballerinax/module_test4:0.1.0:Issue is different in " +
-                        "terms of attributes count", 9, 24);
+
+        int i = 0;
+        Diagnostic[] diagnostics = result.getDiagnostics();
+        int diagnosticIndex = 0;
+
+        for (Diagnostic diag : diagnostics) {
+            if (diag.diagnosticInfo().severity() == DiagnosticSeverity.ERROR) {
+                diagnosticIndex = i;
+            }
+            i++;
+        }
+
+        BAssertUtil.validateError(result, diagnosticIndex,
+                "invalid attribute count: expected '13', found '11'", 9, 18);
     }
 
     @Test
     public void testHappyPathMultipleRecords() {
-        CompileResult result = BCompileUtil.compile("src/test/resources/test5", "module_test5",
-                CompilerPhase.COMPILER_PLUGIN);
+        CompileResult result = BCompileUtil.compile("test5/modules/module_test5");
         Assert.assertEquals(result.getErrorCount(), 0);
     }
 
     @Test
     public void testErrorNegativeMultipleRecordsTwoFieldsDifferentNames() {
-        CompileResult result = BCompileUtil.compile("src/test/resources/test6", "module_test6",
-                CompilerPhase.COMPILER_PLUGIN);
-                Assert.assertEquals(result.getErrorCount(), 2);
-        BAssertUtil.validateError(result, 0,
-                "Error: Type ballerinax/module_test6:0.1.0:Creator does not have an attribute named login2", 4, 13);
-        BAssertUtil.validateError(result, 1,
-                "Error: Type ballerinax/module_test6:0.1.0:Creator does not have an attribute named avatarUrl3", 7, 13);
+        CompileResult result = BCompileUtil.compile("test6/modules/module_test6");
+        Assert.assertEquals(result.getErrorCount(), 2);
+
+        int i = 0;
+        int j = 0;
+        Diagnostic[] diagnostics = result.getDiagnostics();
+        int[] diagnosticIndex = new int[result.getErrorCount()];
+
+        for (Diagnostic diag : diagnostics) {
+            if (diag.diagnosticInfo().severity() == DiagnosticSeverity.ERROR) {
+                diagnosticIndex[j] = i;
+                j++;
+            }
+            i++;
+        }
+        j = 0;
+
+        BAssertUtil.validateError(result, diagnosticIndex[j++],
+                "type 'ballerinax/test6.module_test6:0.1.0:Creator' does not have an attribute " +
+                        "named 'login2'", 4, 13);
+        BAssertUtil.validateError(result, diagnosticIndex[j],
+             "type 'ballerinax/test6.module_test6:0.1.0:Creator' does not have an attribute " +
+                     "named 'avatarUrl3'", 7, 13);
     }
 
     @Test
     public void testHappyPathMultipleRecordsMissingNestedRecord() {
-        CompileResult result = BCompileUtil.compile("src/test/resources/test7", "module_test7",
-                CompilerPhase.COMPILER_PLUGIN);
+        CompileResult result = BCompileUtil.compile("test7/modules/module_test7");
         Assert.assertEquals(result.getErrorCount(), 0);
-        File jsonFile = new File("src/test/resources/test7/src/module_test7/resources/Assignee_schema.json");
+        File jsonFile = new File("src/test/resources/test7/modules/module_test7/resources/Assignee_schema.json");
         Assert.assertEquals(jsonFile.exists(), true);
-        jsonFile = new File("src/test/resources/test7/src/module_test7/resources/Creator_schema.json");
+        jsonFile = new File("src/test/resources/test7/modules/module_test7/resources/Creator_schema.json");
         Assert.assertEquals(jsonFile.exists(), true);
-        jsonFile = new File("src/test/resources/test7/src/module_test7/resources/Issue_schema.json");
+        jsonFile = new File("src/test/resources/test7/modules/module_test7/resources/Issue_schema.json");
         Assert.assertEquals(jsonFile.exists(), true);
-        jsonFile = new File("src/test/resources/test7/src/module_test7/resources/Label_schema.json");
+        jsonFile = new File("src/test/resources/test7/modules/module_test7/resources/Label_schema.json");
         Assert.assertEquals(jsonFile.exists(), true);
-        jsonFile = new File("src/test/resources/test7/src/module_test7/resources/Client_functions.json");
+        jsonFile = new File("src/test/resources/test7/modules/module_test7/resources/Client_functions.json");
         Assert.assertEquals(jsonFile.exists(), true);
     }
 
     @Test
     public void testHappyPathSingleSourceFile() {
-        CompileResult result = BCompileUtil.compile("test8/main.bal", CompilerPhase.COMPILER_PLUGIN);
+        CompileResult result = BCompileUtil.compile("test8/main.bal");
         Assert.assertEquals(result.getErrorCount(), 0);
     }
 
     @Test
     public void testErrorNegativeMalformedDataJSON() {
-        CompileResult result = BCompileUtil.compile("src/test/resources/test9", "module_test9",
-                CompilerPhase.COMPILER_PLUGIN);
+        CompileResult result = BCompileUtil.compile("test9/modules/module_test9");
         Assert.assertEquals(result.getErrorCount(), 1);
-        BAssertUtil.validateError(result, 0,
-                "Error: Unexpected character (':' (code 58)): was expecting double-quote to start field name\n" +
-                        " at [Source: java.io.InputStreamReader@OBJECTREF; line: 4, column: 14]", 4, 14);
+
+        int i = 0;
+        Diagnostic[] diagnostics = result.getDiagnostics();
+        int diagnosticIndex = 0;
+
+        for (Diagnostic diag : diagnostics) {
+            if (diag.diagnosticInfo().severity() == DiagnosticSeverity.ERROR) {
+                diagnosticIndex = i;
+            }
+            i++;
+        }
+
+        BAssertUtil.validateError(result, diagnosticIndex,
+                "invalid JSON content: 'Unexpected character (':' (code 58)): was " +
+                        "expecting double-quote to start field name\n" +
+                        " at [Source: java.io.InputStreamReader@OBJECTREF; line: 4, column: 14]'",
+                4, 14);
     }
 
     @Test
     public void testHappyPathWithPropertyHavingArray() {
-        CompileResult result = BCompileUtil.compile("src/test/resources/test10", "module_test10",
-                CompilerPhase.COMPILER_PLUGIN);
+        CompileResult result = BCompileUtil.compile("test10/modules/module_test10");
         Assert.assertEquals(result.getErrorCount(), 0);
-        File jsonFile = new File("src/test/resources/test10/src/module_test10/resources/Label_data.json");
+        File jsonFile = new File("src/test/resources/test10/modules/module_test10/resources/Label_data.json");
         Assert.assertEquals(jsonFile.exists(), true);
-        jsonFile = new File("src/test/resources/test10/src/module_test10/resources/Assignee_schema.json");
+        jsonFile = new File("src/test/resources/test10/modules/module_test10/resources/Assignee_schema.json");
         Assert.assertEquals(jsonFile.exists(), true);
-        jsonFile = new File("src/test/resources/test10/src/module_test10/resources/Creator_schema.json");
+        jsonFile = new File("src/test/resources/test10/modules/module_test10/resources/Creator_schema.json");
         Assert.assertEquals(jsonFile.exists(), true);
-        jsonFile = new File("src/test/resources/test10/src/module_test10/resources/Issue_schema.json");
+        jsonFile = new File("src/test/resources/test10/modules/module_test10/resources/Issue_schema.json");
         Assert.assertEquals(jsonFile.exists(), true);
-        jsonFile = new File("src/test/resources/test10/src/module_test10/resources/Label_schema.json");
+        jsonFile = new File("src/test/resources/test10/modules/module_test10/resources/Label_schema.json");
         Assert.assertEquals(jsonFile.exists(), true);
-        jsonFile = new File("src/test/resources/test10/src/module_test10/resources/Client_functions.json");
+        jsonFile = new File("src/test/resources/test10/modules/module_test10/resources/Client_functions.json");
         Assert.assertEquals(jsonFile.exists(), true);
     }
 
     @Test
     public void testHappyPathSchemaExtraction() {
-        CompileResult result = BCompileUtil.compile("src/test/resources/test11", "module_test11",
-                CompilerPhase.COMPILER_PLUGIN);
+        CompileResult result = BCompileUtil.compile("test11/modules/module_test11");
         Assert.assertEquals(result.getErrorCount(), 0);
-        File jsonFile = new File("src/test/resources/test11/src/module_test11/resources/Assignee_schema.json");
+        File jsonFile = new File("src/test/resources/test11/modules/module_test11/resources/Assignee_schema.json");
         Assert.assertEquals(jsonFile.exists(), true);
-        jsonFile = new File("src/test/resources/test11/src/module_test11/resources/Creator_schema.json");
+        jsonFile = new File("src/test/resources/test11/modules/module_test11/resources/Creator_schema.json");
         Assert.assertEquals(jsonFile.exists(), true);
-        jsonFile = new File("src/test/resources/test11/src/module_test11/resources/Issue_schema.json");
+        jsonFile = new File("src/test/resources/test11/modules/module_test11/resources/Issue_schema.json");
         Assert.assertEquals(jsonFile.exists(), true);
-        jsonFile = new File("src/test/resources/test11/src/module_test11/resources/Label_schema.json");
+        jsonFile = new File("src/test/resources/test11/modules/module_test11/resources/Label_schema.json");
         Assert.assertEquals(jsonFile.exists(), true);
     }
 
     @Test
     public void testFunctionWithNoAssociatedRecordTypes() {
-        CompileResult result = BCompileUtil.compile("src/test/resources/test12", "module_test12",
-                CompilerPhase.COMPILER_PLUGIN);
+        CompileResult result = BCompileUtil.compile("test12/modules/module_test12");
         Assert.assertEquals(result.getErrorCount(), 0);
     }
 
     @Test
     public void testDataJSONsWrittenWithoutReferenceToAnyConnectorTypes() {
-        CompileResult result = BCompileUtil.compile("src/test/resources/test13", "module_test13",
-                CompilerPhase.COMPILER_PLUGIN);
+        CompileResult result = BCompileUtil.compile("test13/modules/module_test13");
         Assert.assertEquals(result.getErrorCount(), 0);
     }
 
     @Test
     public void testHappyPathMultipleClients() {
-        CompileResult result = BCompileUtil.compile("src/test/resources/test14", "module_test14",
-                CompilerPhase.COMPILER_PLUGIN);
+        CompileResult result = BCompileUtil.compile("test14/modules/module_test14");
         Assert.assertEquals(result.getErrorCount(), 0);
-        File jsonFile = new File("src/test/resources/test14/src/module_test14/resources/Assignee_schema.json");
+        File jsonFile = new File("src/test/resources/test14/modules/module_test14/resources/Assignee_schema.json");
         Assert.assertEquals(jsonFile.exists(), true);
-        jsonFile = new File("src/test/resources/test14/src/module_test14/resources/Creator_schema.json");
+        jsonFile = new File("src/test/resources/test14/modules/module_test14/resources/Creator_schema.json");
         Assert.assertEquals(jsonFile.exists(), true);
-        jsonFile = new File("src/test/resources/test14/src/module_test14/resources/Issue_schema.json");
+        jsonFile = new File("src/test/resources/test14/modules/module_test14/resources/Issue_schema.json");
         Assert.assertEquals(jsonFile.exists(), true);
-        jsonFile = new File("src/test/resources/test14/src/module_test14/resources/Label_schema.json");
+        jsonFile = new File("src/test/resources/test14/modules/module_test14/resources/Label_schema.json");
         Assert.assertEquals(jsonFile.exists(), true);
-        jsonFile = new File("src/test/resources/test14/src/module_test14/resources/Client1_functions.json");
+        jsonFile = new File("src/test/resources/test14/modules/module_test14/resources/Client1_functions.json");
         Assert.assertEquals(jsonFile.exists(), true);
-        jsonFile = new File("src/test/resources/test14/src/module_test14/resources/Client2_functions.json");
+        jsonFile = new File("src/test/resources/test14/modules/module_test14/resources/Client2_functions.json");
         Assert.assertEquals(jsonFile.exists(), true);
     }
 
     @Test
     public void testHappyPathClientsWithOddClassAndFunctionNames() {
-        CompileResult result = BCompileUtil.compile("src/test/resources/test15", "module_test15",
-                CompilerPhase.COMPILER_PLUGIN);
+        CompileResult result = BCompileUtil.compile("test15/modules/module_test15");
         Assert.assertEquals(result.getErrorCount(), 0);
         File jsonFile = new File("src/test/resources/test15" +
-                "/src/module_test15/resources/%5C+%5C%2F%5C%3A%5C%40%5C%5B%5C%60%5C%7B%5C%7E_Connector_functions.json");
+            "/modules/module_test15/resources/%5C+%5C%2F%5C%3A%5C%40%5C%5B%5C%60%5C%7B%5C%7E_Connector_functions.json");
         Assert.assertEquals(jsonFile.exists(), true);
     }
 
@@ -222,32 +274,29 @@ public class DataMapperPluginTest {
     public void tearDown() throws IOException {
         //Cleanup the test projects if they already have generated json files
         try {
-            String path = "src/test/resources/test1/src/module_test1/resources/";
+            String path = "src/test/resources/test1/modules/module_test1/resources/";
             Files.deleteIfExists(Paths.get(path + "Assignee_schema.json"));
             Files.deleteIfExists(Paths.get(path + "Client_functions.json"));
             Files.deleteIfExists(Paths.get(path + "Creator_schema.json"));
             Files.deleteIfExists(Paths.get(path + "Issue_schema.json"));
             Files.deleteIfExists(Paths.get(path + "Label_schema.json"));
 
-            path = "src/test/resources/test2/src/module_test2/resources/";
+            path = "src/test/resources/test1/target/";
 
-            Files.deleteIfExists(Paths.get(path + "Assignee_schema.json"));
-            Files.deleteIfExists(Paths.get(path + "Creator_schema.json"));
-            Files.deleteIfExists(Paths.get(path + "Creator_data.json"));
-            Files.deleteIfExists(Paths.get(path + "Issue_schema.json"));
-            Files.deleteIfExists(Paths.get(path + "Label_schema.json"));
-            Files.deleteIfExists(Paths.get(path + "Client_functions.json"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test1/0.1.0/bir/test1.bir"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test1/0.1.0/bir/test1.module_test1.bir"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test1/0.1.0/java11/test1.jar"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test1/0.1.0/java11/test1.module_test1.jar"));
 
-            path = "src/test/resources/test3/src/module_test3/resources/";
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test1/0.1.0/bir"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test1/0.1.0/java11"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test1/0.1.0"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test1"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax"));
+            Files.deleteIfExists(Paths.get(path + "cache"));
+            Files.deleteIfExists(Paths.get(path));
 
-            Files.deleteIfExists(Paths.get(path + "Creator_data.json"));
-            Files.deleteIfExists(Paths.get(path + "Assignee_schema.json"));
-            Files.deleteIfExists(Paths.get(path + "Creator_schema.json"));
-            Files.deleteIfExists(Paths.get(path + "Issue_schema.json"));
-            Files.deleteIfExists(Paths.get(path + "Label_schema.json"));
-            Files.deleteIfExists(Paths.get(path + "Client_functions.json"));
-
-            path = "src/test/resources/test4/src/module_test4/resources/";
+            path = "src/test/resources/test2/modules/module_test2/resources/";
 
             Files.deleteIfExists(Paths.get(path + "Assignee_schema.json"));
             Files.deleteIfExists(Paths.get(path + "Creator_schema.json"));
@@ -256,7 +305,70 @@ public class DataMapperPluginTest {
             Files.deleteIfExists(Paths.get(path + "Label_schema.json"));
             Files.deleteIfExists(Paths.get(path + "Client_functions.json"));
 
-            path = "src/test/resources/test5/src/module_test5/resources/";
+            path = "src/test/resources/test2/target/";
+
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test2/0.1.0/bir/test2.bir"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test2/0.1.0/bir/test2.module_test2.bir"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test2/0.1.0/java11/test2.jar"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test2/0.1.0/java11/test2.module_test2.jar"));
+
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test2/0.1.0/bir"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test2/0.1.0/java11"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test2/0.1.0"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test2"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax"));
+            Files.deleteIfExists(Paths.get(path + "cache"));
+            Files.deleteIfExists(Paths.get(path));
+
+            path = "src/test/resources/test3/modules/module_test3/resources/";
+
+            Files.deleteIfExists(Paths.get(path + "Creator_data.json"));
+            Files.deleteIfExists(Paths.get(path + "Assignee_schema.json"));
+            Files.deleteIfExists(Paths.get(path + "Creator_schema.json"));
+            Files.deleteIfExists(Paths.get(path + "Issue_schema.json"));
+            Files.deleteIfExists(Paths.get(path + "Label_schema.json"));
+            Files.deleteIfExists(Paths.get(path + "Client_functions.json"));
+
+            path = "src/test/resources/test3/target/";
+
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test3/0.1.0/bir/test3.bir"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test3/0.1.0/bir/test3.module_test3.bir"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test3/0.1.0/java11/test3.jar"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test3/0.1.0/java11/test3.module_test3.jar"));
+
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test3/0.1.0/bir"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test3/0.1.0/java11"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test3/0.1.0"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test3"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax"));
+            Files.deleteIfExists(Paths.get(path + "cache"));
+            Files.deleteIfExists(Paths.get(path));
+
+            path = "src/test/resources/test4/modules/module_test4/resources/";
+
+            Files.deleteIfExists(Paths.get(path + "Assignee_schema.json"));
+            Files.deleteIfExists(Paths.get(path + "Creator_schema.json"));
+            Files.deleteIfExists(Paths.get(path + "Creator_data.json"));
+            Files.deleteIfExists(Paths.get(path + "Issue_schema.json"));
+            Files.deleteIfExists(Paths.get(path + "Label_schema.json"));
+            Files.deleteIfExists(Paths.get(path + "Client_functions.json"));
+
+            path = "src/test/resources/test4/target/";
+
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test4/0.1.0/bir/test4.bir"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test4/0.1.0/bir/test4.module_test4.bir"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test4/0.1.0/java11/test4.jar"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test4/0.1.0/java11/test4.module_test4.jar"));
+
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test4/0.1.0/bir"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test4/0.1.0/java11"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test4/0.1.0"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test4"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax"));
+            Files.deleteIfExists(Paths.get(path + "cache"));
+            Files.deleteIfExists(Paths.get(path));
+
+            path = "src/test/resources/test5/modules/module_test5/resources/";
 
             Files.deleteIfExists(Paths.get(path + "Assignee_schema.json"));
             Files.deleteIfExists(Paths.get(path + "Creator_schema.json"));
@@ -264,7 +376,22 @@ public class DataMapperPluginTest {
             Files.deleteIfExists(Paths.get(path + "Label_schema.json"));
             Files.deleteIfExists(Paths.get(path + "Client_functions.json"));
 
-            path = "src/test/resources/test6/src/module_test6/resources/";
+            path = "src/test/resources/test5/target/";
+
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test5/0.1.0/bir/test5.bir"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test5/0.1.0/bir/test5.module_test5.bir"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test5/0.1.0/java11/test5.jar"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test5/0.1.0/java11/test5.module_test5.jar"));
+
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test5/0.1.0/bir"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test5/0.1.0/java11"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test5/0.1.0"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test5"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax"));
+            Files.deleteIfExists(Paths.get(path + "cache"));
+            Files.deleteIfExists(Paths.get(path));
+
+            path = "src/test/resources/test6/modules/module_test6/resources/";
 
             Files.deleteIfExists(Paths.get(path + "Assignee_schema.json"));
             Files.deleteIfExists(Paths.get(path + "Creator_schema.json"));
@@ -272,7 +399,22 @@ public class DataMapperPluginTest {
             Files.deleteIfExists(Paths.get(path + "Label_schema.json"));
             Files.deleteIfExists(Paths.get(path + "Client_functions.json"));
 
-            path = "src/test/resources/test7/src/module_test7/resources/";
+            path = "src/test/resources/test6/target/";
+
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test6/0.1.0/bir/test6.bir"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test6/0.1.0/bir/test6.module_test6.bir"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test6/0.1.0/java11/test6.jar"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test6/0.1.0/java11/test6.module_test6.jar"));
+
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test6/0.1.0/bir"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test6/0.1.0/java11"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test6/0.1.0"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test6"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax"));
+            Files.deleteIfExists(Paths.get(path + "cache"));
+            Files.deleteIfExists(Paths.get(path));
+
+            path = "src/test/resources/test7/modules/module_test7/resources/";
 
             Files.deleteIfExists(Paths.get(path + "Assignee_schema.json"));
             Files.deleteIfExists(Paths.get(path + "Creator_schema.json"));
@@ -280,7 +422,35 @@ public class DataMapperPluginTest {
             Files.deleteIfExists(Paths.get(path + "Label_schema.json"));
             Files.deleteIfExists(Paths.get(path + "Client_functions.json"));
 
-            path = "src/test/resources/test9/src/module_test9/resources/";
+            path = "src/test/resources/test7/target/";
+
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test7/0.1.0/bir/test7.bir"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test7/0.1.0/bir/test7.module_test7.bir"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test7/0.1.0/java11/test7.jar"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test7/0.1.0/java11/test7.module_test7.jar"));
+
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test7/0.1.0/bir"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test7/0.1.0/java11"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test7/0.1.0"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test7"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax"));
+            Files.deleteIfExists(Paths.get(path + "cache"));
+            Files.deleteIfExists(Paths.get(path));
+
+            path = "src/test/resources/test8/target/";
+
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test8/0.1.0/bir/test8.bir"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test8/0.1.0/java11/test8.jar"));
+
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test8/0.1.0/bir"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test8/0.1.0/java11"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test8/0.1.0"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test8"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax"));
+            Files.deleteIfExists(Paths.get(path + "cache"));
+            Files.deleteIfExists(Paths.get(path));
+
+            path = "src/test/resources/test9/modules/module_test9/resources/";
 
             Files.deleteIfExists(Paths.get(path + "Assignee_schema.json"));
             Files.deleteIfExists(Paths.get(path + "Creator_schema.json"));
@@ -288,7 +458,22 @@ public class DataMapperPluginTest {
             Files.deleteIfExists(Paths.get(path + "Label_schema.json"));
             Files.deleteIfExists(Paths.get(path + "Client_functions.json"));
 
-            path = "src/test/resources/test10/src/module_test10/resources/";
+            path = "src/test/resources/test9/target/";
+
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test9/0.1.0/bir/test9.bir"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test9/0.1.0/bir/test9.module_test9.bir"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test9/0.1.0/java11/test9.jar"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test9/0.1.0/java11/test9.module_test9.jar"));
+
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test9/0.1.0/bir"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test9/0.1.0/java11"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test9/0.1.0"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test9"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax"));
+            Files.deleteIfExists(Paths.get(path + "cache"));
+            Files.deleteIfExists(Paths.get(path));
+
+            path = "src/test/resources/test10/modules/module_test10/resources/";
 
             Files.deleteIfExists(Paths.get(path + "Label_data.json"));
             Files.deleteIfExists(Paths.get(path + "Assignee_schema.json"));
@@ -297,7 +482,22 @@ public class DataMapperPluginTest {
             Files.deleteIfExists(Paths.get(path + "Label_schema.json"));
             Files.deleteIfExists(Paths.get(path + "Client_functions.json"));
 
-            path = "src/test/resources/test11/src/module_test11/resources/";
+            path = "src/test/resources/test10/target/";
+
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test10/0.1.0/bir/test10.bir"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test10/0.1.0/bir/test10.module_test10.bir"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test10/0.1.0/java11/test10.jar"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test10/0.1.0/java11/test10.module_test10.jar"));
+
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test10/0.1.0/bir"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test10/0.1.0/java11"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test10/0.1.0"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test10"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax"));
+            Files.deleteIfExists(Paths.get(path + "cache"));
+            Files.deleteIfExists(Paths.get(path));
+
+            path = "src/test/resources/test11/modules/module_test11/resources/";
 
             Files.deleteIfExists(Paths.get(path + "Assignee_schema.json"));
             Files.deleteIfExists(Paths.get(path + "Creator_schema.json"));
@@ -305,13 +505,58 @@ public class DataMapperPluginTest {
             Files.deleteIfExists(Paths.get(path + "Label_schema.json"));
             Files.deleteIfExists(Paths.get(path + "Client_functions.json"));
 
-            Files.deleteIfExists(Paths.get("src/test/resources/test12/src/module_test12/resources/" +
+            path = "src/test/resources/test11/target/";
+
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test11/0.1.0/bir/test11.bir"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test11/0.1.0/bir/test11.module_test11.bir"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test11/0.1.0/java11/test11.jar"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test11/0.1.0/java11/test11.module_test11.jar"));
+
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test11/0.1.0/bir"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test11/0.1.0/java11"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test11/0.1.0"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test11"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax"));
+            Files.deleteIfExists(Paths.get(path + "cache"));
+            Files.deleteIfExists(Paths.get(path));
+
+            Files.deleteIfExists(Paths.get("src/test/resources/test12/modules/module_test12/resources/" +
                     "Client_functions.json"));
 
-            Files.deleteIfExists(Paths.get("src/test/resources/test13/src/module_test13/resources/" +
+            path = "src/test/resources/test12/target/";
+
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test12/0.1.0/bir/test12.bir"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test12/0.1.0/bir/test12.module_test12.bir"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test12/0.1.0/java11/test12.jar"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test12/0.1.0/java11/test12.module_test12.jar"));
+
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test12/0.1.0/bir"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test12/0.1.0/java11"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test12/0.1.0"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test12"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax"));
+            Files.deleteIfExists(Paths.get(path + "cache"));
+            Files.deleteIfExists(Paths.get(path));
+
+            Files.deleteIfExists(Paths.get("src/test/resources/test13/modules/module_test13/resources/" +
                     "Client_functions.json"));
 
-            path = "src/test/resources/test14/src/module_test14/resources/";
+            path = "src/test/resources/test13/target/";
+
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test13/0.1.0/bir/test13.bir"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test13/0.1.0/bir/test13.module_test13.bir"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test13/0.1.0/java11/test13.jar"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test13/0.1.0/java11/test13.module_test13.jar"));
+
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test13/0.1.0/bir"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test13/0.1.0/java11"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test13/0.1.0"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test13"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax"));
+            Files.deleteIfExists(Paths.get(path + "cache"));
+            Files.deleteIfExists(Paths.get(path));
+
+            path = "src/test/resources/test14/modules/module_test14/resources/";
 
             Files.deleteIfExists(Paths.get(path + "Assignee_schema.json"));
             Files.deleteIfExists(Paths.get(path + "Creator_schema.json"));
@@ -320,10 +565,41 @@ public class DataMapperPluginTest {
             Files.deleteIfExists(Paths.get(path + "Client1_functions.json"));
             Files.deleteIfExists(Paths.get(path + "Client2_functions.json"));
 
-            path = "src/test/resources/test15/src/module_test15/resources/";
+            path = "src/test/resources/test14/target/";
+
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test14/0.1.0/bir/test14.bir"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test14/0.1.0/bir/test14.module_test14.bir"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test14/0.1.0/java11/test14.jar"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test14/0.1.0/java11/test14.module_test14.jar"));
+
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test14/0.1.0/bir"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test14/0.1.0/java11"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test14/0.1.0"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test14"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax"));
+            Files.deleteIfExists(Paths.get(path + "cache"));
+            Files.deleteIfExists(Paths.get(path));
+
+            path = "src/test/resources/test15/modules/module_test15/resources/";
 
             Files.deleteIfExists(Paths.get(path +
                     "%5C+%5C%2F%5C%3A%5C%40%5C%5B%5C%60%5C%7B%5C%7E_Connector_functions.json"));
+
+            path = "src/test/resources/test15/target/";
+
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test15/0.1.0/bir/test15.bir"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test15/0.1.0/bir/test15.module_test15.bir"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test15/0.1.0/java11/test15.jar"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test15/0.1.0/java11/test15.module_test15.jar"));
+
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test15/0.1.0/bir"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test15/0.1.0/java11"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test15/0.1.0"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test15"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax"));
+            Files.deleteIfExists(Paths.get(path + "cache"));
+            Files.deleteIfExists(Paths.get(path));
+
         } catch (IOException e) {
             Reporter.log("Error : " + e.getMessage(), true);
             throw e;
