@@ -34,11 +34,12 @@ import org.ballerinalang.model.elements.PackageID;
 import org.ballerinalang.model.tree.NodeKind;
 import org.ballerinalang.model.tree.PackageNode;
 import org.ballerinalang.model.tree.TopLevelNode;
-import org.ballerinalang.util.diagnostic.DiagnosticErrorCode;
 import org.ballerinalang.util.diagnostic.DiagnosticLog;
+import org.ballerinax.datamapper.diagnostic.DataMapperDiagnosticLog;
+import org.ballerinax.datamapper.diagnostic.DiagnosticErrorCode;
+import org.ballerinax.datamapper.exceptions.DataMapperException;
 import org.ballerinax.datamapper.util.Utils;
 import org.wso2.ballerinalang.compiler.diagnostic.BLangDiagnosticLocation;
-import org.wso2.ballerinalang.compiler.diagnostic.BLangDiagnosticLog;
 import org.wso2.ballerinalang.compiler.semantics.model.symbols.BRecordTypeSymbol;
 import org.wso2.ballerinalang.compiler.tree.BLangClassDefinition;
 import org.wso2.ballerinalang.compiler.tree.BLangFunction;
@@ -78,7 +79,7 @@ import java.util.stream.Stream;
  */
 public class DataMapperPlugin extends AbstractCompilerPlugin {
     public static final String URL_ENCODED_COLON = "%3A";
-    private BLangDiagnosticLog dlog;
+    private DataMapperDiagnosticLog dlog;
     private HashMap<String, ArrayList<JsonNode>> sampleDataMap;
     private HashMap<String, String> typeInformationMap;
     private HashSet<String> typeSet;
@@ -98,11 +99,11 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
         context = ctx;
         CompilerOptions options = CompilerOptions.getInstance(ctx);
         projectDirectory = options.get(CompilerOptionName.PROJECT_DIR);
+        this.dlog = new DataMapperDiagnosticLog(ctx);
     }
 
     @Override
     public void init(DiagnosticLog diagnosticLog) {
-        this.dlog = (BLangDiagnosticLog) diagnosticLog;
         this.sampleDataMap = new HashMap<String, ArrayList<JsonNode>>();
         this.typeInformationMap = new HashMap<String, String>();
         this.typeSet = new HashSet<String>();
@@ -121,13 +122,14 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
         }
 
         if (clientFlag) {
+            dlog.setCurrentPackageId(((BLangPackage) packageNode).packageID);
             for (TopLevelNode topLevelNode : ((BLangPackage) packageNode).topLevelNodes) {
                 if (topLevelNode.getKind() == NodeKind.CLASS_DEFN &&
                         (((BLangClassDefinition) topLevelNode).symbol.flags & Flags.CLIENT) == Flags.CLIENT) {
                     try {
                         extractFunctionCalls((BLangClassDefinition) topLevelNode);
                     } catch (Exception e) {
-                        dlog.error(packageNode.getPosition(), DiagnosticErrorCode.INCOMPATIBLE_TYPES, e.getMessage());
+                        throw new DataMapperException(e);
                     }
                 } else if (topLevelNode.getKind() == NodeKind.TYPE_DEFINITION &&
                         ((BLangTypeDefinition) topLevelNode).typeNode.getKind() == NodeKind.RECORD_TYPE) {
@@ -150,7 +152,7 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
                             serialized = "{\"" + encodedTypeName + "\":" + serialized + "}";
                         } catch (JsonProcessingException e) {
                             dlog.error(packageNode.getPosition(),
-                                    DiagnosticErrorCode.INCOMPATIBLE_TYPES, e.getMessage());
+                                    DiagnosticErrorCode.ERROR_INVALID_JSON_CONTENT, e.getMessage());
                         }
                         structureMap.clear();
                         this.typeInformationMap.put(encodedTypeName, serialized);
@@ -198,7 +200,7 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
                     Utils.writeToFile(recordEntry, targetStructureFilePath);
                     itemsWrittenSet.add(key);
                 } catch (IOException e) {
-                    dlog.error(nodePosition, DiagnosticErrorCode.INCOMPATIBLE_TYPES, e.getMessage());
+                    throw new DataMapperException(e);
                 }
             }
         }
@@ -223,7 +225,7 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
             try {
                 Utils.writeToFile(recordEntry, targetStructureFilePath);
             } catch (IOException e) {
-                dlog.error(nodePosition, DiagnosticErrorCode.INCOMPATIBLE_TYPES, e.getMessage());
+                throw new DataMapperException(e);
             }
         }
 
@@ -259,7 +261,7 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
                     Location position = new BLangDiagnosticLocation(path,
                             location.getLineNr() - 1, location.getLineNr() - 1,
                             location.getColumnNr() - 1, location.getColumnNr() - 1);
-                    dlog.error(position, DiagnosticErrorCode.INCOMPATIBLE_TYPES, "Error: " +
+                    dlog.error(position, DiagnosticErrorCode.ERROR_INVALID_JSON_CONTENT,
                             getCustomizedErrorMessage(e));
                 }
             }
@@ -292,7 +294,7 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
                 Utils.writeToFile(sb.toString(), targetStructureFilePath);
             }
         } catch (IOException e) {
-            dlog.error(nodePosition, DiagnosticErrorCode.INCOMPATIBLE_TYPES, e.getMessage());
+            throw new DataMapperException(e);
         }
     }
 
@@ -361,9 +363,8 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
                         Location position = new BLangDiagnosticLocation(path,
                                 startLocation.getLineNr() - 1, endLocation.getLineNr() - 1,
                                 startLocation.getColumnNr() - 1, endLocation.getColumnNr() - 1);
-                        dlog.error(position, DiagnosticErrorCode.INCOMPATIBLE_TYPES,
-                                "Error: Sample data provided for " +
-                                typeName + " is different in terms of attributes count");
+                        dlog.error(position, DiagnosticErrorCode.ERROR_INVALID_ATTRIBUTE_COUNT,
+                                expectedNumberOfAttributes, attributeCounter);
                     } else {
                         if (!typeStack.isEmpty()) {
                             ArrayList<JsonNode> lst = sampleDataMap.getOrDefault(typeName, new ArrayList<JsonNode>());
@@ -412,8 +413,7 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
                             Location position = new BLangDiagnosticLocation(path,
                                     location.getLineNr() - 1, location.getLineNr() - 1,
                                     location.getColumnNr() - (name.length() + 6), location.getColumnNr() - 4);
-                            dlog.error(position, DiagnosticErrorCode.INCOMPATIBLE_TYPES, "Error: Type " + typeName +
-                                    " does not have an attribute named " + name);
+                            dlog.error(position, DiagnosticErrorCode.ERROR_INVALID_ATTRIBUTE_NAME, typeName, name);
                         }
                         attributeCounter++;
                     } else {
@@ -447,8 +447,7 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
                             Location position = new BLangDiagnosticLocation(path,
                                     location.getLineNr(), location.getLineNr(),
                                     location.getColumnNr() - (name.length() + 5), location.getColumnNr() - 3);
-                            dlog.error(position, DiagnosticErrorCode.INCOMPATIBLE_TYPES, "Error: Type " +
-                                    typeName + " does not have an attribute named " + name);
+                            dlog.error(position, DiagnosticErrorCode.ERROR_INVALID_ATTRIBUTE_NAME, typeName, name);
                         }
 
                         counter--;
@@ -474,9 +473,7 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
                 case VALUE_NULL:
                     break;
                 default:
-                    dlog.error(nodePosition, DiagnosticErrorCode.INCOMPATIBLE_TYPES,
-                            "Error: Unexpected JSON token value: "
-                            + jsonToken);
+                    dlog.error(nodePosition, DiagnosticErrorCode.ERROR_INVALID_JSON_TOKEN, jsonToken);
                     break;
             }
         }
@@ -617,9 +614,7 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
             String encodedFileName = URLEncoder.encode(fileName, "UTF-8");
             return encodedFileName;
         } catch (UnsupportedEncodingException e) {
-            dlog.error(nodePosition, DiagnosticErrorCode.INCOMPATIBLE_TYPES, e.getMessage());
+            throw new DataMapperException(e);
         }
-
-        return null;
     }
 }

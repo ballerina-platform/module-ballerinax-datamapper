@@ -71,15 +71,14 @@ public class DataMapperPluginTest {
         }
         j = 0;
         BAssertUtil.validateError(result, diagnosticIndex[j++],
-                "incompatible types: expected 'Error: Type ballerinax/test2.module_test2:0.1.0:Issue " +
-                        "does not have an attribute named id2', found '{1}'",
+                "type 'ballerinax/test2.module_test2:0.1.0:Issue' does not have an attribute named 'id2'",
                 4, 13);
         BAssertUtil.validateError(result, diagnosticIndex[j++],
-                "incompatible types: expected 'Error: Type ballerinax/test2.module_test2:0.1.0:Creator " +
-                        "does not have an attribute named resourcePath5', found '{1}'", 11, 17);
+                "type 'ballerinax/test2.module_test2:0.1.0:Creator' does not have an attribute " +
+                        "named 'resourcePath5'", 11, 17);
         BAssertUtil.validateError(result, diagnosticIndex[j],
-                "incompatible types: expected 'Error: Type ballerinax/test2.module_test2:0.1.0:Issue " +
-                        "does not have an attribute named bodyText3', found '{1}'", 25, 13);
+                "type 'ballerinax/test2.module_test2:0.1.0:Issue' does not have an attribute " +
+                        "named 'bodyText3'", 25, 13);
     }
 
     @Test
@@ -99,9 +98,7 @@ public class DataMapperPluginTest {
         }
 
         BAssertUtil.validateError(result, diagnosticIndex,
-                "incompatible types: expected 'Error: Sample data provided for " +
-                        "ballerinax/test3.module_test3:0.1.0:Issue is different in terms of attributes count', " +
-                        "found '{1}'", 9, 18);
+                "invalid attribute count: expected '13', found '12'", 9, 18);
     }
 
     @Test
@@ -121,9 +118,7 @@ public class DataMapperPluginTest {
         }
 
         BAssertUtil.validateError(result, diagnosticIndex,
-                "incompatible types: expected 'Error: Sample data provided for " +
-                        "ballerinax/test4.module_test4:0.1.0:Issue is different in terms of attributes count', " +
-                        "found '{1}'", 9, 18);
+                "invalid attribute count: expected '13', found '11'", 9, 18);
     }
 
     @Test
@@ -152,11 +147,11 @@ public class DataMapperPluginTest {
         j = 0;
 
         BAssertUtil.validateError(result, diagnosticIndex[j++],
-                "incompatible types: expected 'Error: Type ballerinax/test6.module_test6:0.1.0:Creator " +
-                        "does not have an attribute named login2', found '{1}'", 4, 13);
+                "type 'ballerinax/test6.module_test6:0.1.0:Creator' does not have an attribute " +
+                        "named 'login2'", 4, 13);
         BAssertUtil.validateError(result, diagnosticIndex[j],
-             "incompatible types: expected 'Error: Type ballerinax/test6.module_test6:0.1.0:Creator " +
-                     "does not have an attribute named avatarUrl3', found '{1}'", 7, 13);
+             "type 'ballerinax/test6.module_test6:0.1.0:Creator' does not have an attribute " +
+                     "named 'avatarUrl3'", 7, 13);
     }
 
     @Test
@@ -198,9 +193,9 @@ public class DataMapperPluginTest {
         }
 
         BAssertUtil.validateError(result, diagnosticIndex,
-                "incompatible types: expected 'Error: Unexpected character (':' (code 58)): was " +
+                "invalid json content: 'Unexpected character (':' (code 58)): was " +
                         "expecting double-quote to start field name\n" +
-                        " at [Source: java.io.InputStreamReader@OBJECTREF; line: 4, column: 14]', found '{1}'",
+                        " at [Source: java.io.InputStreamReader@OBJECTREF; line: 4, column: 14]'",
                 4, 14);
     }
 
@@ -313,7 +308,9 @@ public class DataMapperPluginTest {
             path = "src/test/resources/test2/target/";
 
             Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test2/0.1.0/bir/test2.bir"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test2/0.1.0/bir/test2.module_test2.bir"));
             Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test2/0.1.0/java11/test2.jar"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test2/0.1.0/java11/test2.module_test2.jar"));
 
             Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test2/0.1.0/bir"));
             Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test2/0.1.0/java11"));
@@ -335,7 +332,9 @@ public class DataMapperPluginTest {
             path = "src/test/resources/test3/target/";
 
             Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test3/0.1.0/bir/test3.bir"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test3/0.1.0/bir/test3.module_test3.bir"));
             Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test3/0.1.0/java11/test3.jar"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test3/0.1.0/java11/test3.module_test3.jar"));
 
             Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test3/0.1.0/bir"));
             Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test3/0.1.0/java11"));
@@ -357,7 +356,9 @@ public class DataMapperPluginTest {
             path = "src/test/resources/test4/target/";
 
             Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test4/0.1.0/bir/test4.bir"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test4/0.1.0/bir/test4.module_test4.bir"));
             Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test4/0.1.0/java11/test4.jar"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test4/0.1.0/java11/test4.module_test4.jar"));
 
             Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test4/0.1.0/bir"));
             Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test4/0.1.0/java11"));
@@ -460,7 +461,9 @@ public class DataMapperPluginTest {
             path = "src/test/resources/test9/target/";
 
             Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test9/0.1.0/bir/test9.bir"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test9/0.1.0/bir/test9.module_test9.bir"));
             Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test9/0.1.0/java11/test9.jar"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test9/0.1.0/java11/test9.module_test9.jar"));
 
             Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test9/0.1.0/bir"));
             Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test9/0.1.0/java11"));
