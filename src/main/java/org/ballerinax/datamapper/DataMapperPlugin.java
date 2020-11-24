@@ -99,7 +99,7 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
         context = ctx;
         CompilerOptions options = CompilerOptions.getInstance(ctx);
         projectDirectory = options.get(CompilerOptionName.PROJECT_DIR);
-        this.dlog = new DataMapperDiagnosticLog(ctx);
+        this.dlog = DataMapperDiagnosticLog.getInstance(ctx);
     }
 
     @Override

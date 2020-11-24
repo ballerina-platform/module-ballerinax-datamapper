@@ -47,7 +47,7 @@ public class DataMapperDiagnosticLog implements DiagnosticLog {
     private PackageID currentPackageId;
     private boolean isMute = false;
 
-    public DataMapperDiagnosticLog(CompilerContext context) {
+    private DataMapperDiagnosticLog(CompilerContext context) {
         context.put(DIAGNOSTIC_LOG_KEY, this);
         this.packageCache = PackageCache.getInstance(context);
     }
