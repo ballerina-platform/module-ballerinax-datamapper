@@ -86,12 +86,6 @@ task copyStdlibs(type: Copy) {
             from "${artifactExtractedPath}/balo/"
         }
     }
-
-//    copy {
-//        def artifactExtractedPath = "${project.buildDir}/extracted-distribution/"
-//        from file("$project.projectDir/target/balo")
-//        into file("${artifactExtractedPath}/balo/${packageOrg}/${packageName}/${tomlVersion}")
-//    }
 }
 
 task copyLib(type: Copy) {

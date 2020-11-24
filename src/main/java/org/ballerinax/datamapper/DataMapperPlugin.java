@@ -121,11 +121,6 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
         }
 
         if (clientFlag) {
-            String pkgRoot = projectDirectory;
-            projectSourceFolder = pkgRoot.substring(0, pkgRoot.lastIndexOf("/"));
-            projectSourceFolder = projectSourceFolder.substring(0, projectSourceFolder.lastIndexOf("/"));
-            projectSourceFolder = projectSourceFolder.substring(0, projectSourceFolder.lastIndexOf("/"));
-
             for (TopLevelNode topLevelNode : ((BLangPackage) packageNode).topLevelNodes) {
                 if (topLevelNode.getKind() == NodeKind.CLASS_DEFN &&
                         (((BLangClassDefinition) topLevelNode).symbol.flags & Flags.CLIENT) == Flags.CLIENT) {

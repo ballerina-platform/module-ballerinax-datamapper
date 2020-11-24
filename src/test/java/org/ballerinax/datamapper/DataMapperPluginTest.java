@@ -401,7 +401,9 @@ public class DataMapperPluginTest {
             path = "src/test/resources/test6/target/";
 
             Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test6/0.1.0/bir/test6.bir"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test6/0.1.0/bir/test6.module_test6.bir"));
             Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test6/0.1.0/java11/test6.jar"));
+            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test6/0.1.0/java11/test6.module_test6.jar"));
 
             Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test6/0.1.0/bir"));
             Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test6/0.1.0/java11"));
