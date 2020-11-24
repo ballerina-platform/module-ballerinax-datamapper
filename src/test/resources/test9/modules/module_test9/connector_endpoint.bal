@@ -14,5 +14,8 @@
 // specific language governing permissions and limitations
 // under the License.
 
-public function main() {
+public client class Client {
+    public remote function createIssue()  returns Issue|error {
+        return {};
+    }
 }

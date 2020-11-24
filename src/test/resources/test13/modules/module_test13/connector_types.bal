@@ -14,5 +14,24 @@
 // specific language governing permissions and limitations
 // under the License.
 
-public function main() {
-}
+public type Assignee record {|
+    string id = "";
+    string login = "";
+    string email = "";
+    string? bio = "";
+    string? url = "";
+|};
+
+public type Creator record {|
+    string login = "";
+    string? resourcePath = "";
+    string? url = "";
+    string? avatarUrl = "";
+|};
+
+public type Label record {|
+    string id = "";
+    string name = "";
+    string? description = "";
+    string? color = "";
+|};
