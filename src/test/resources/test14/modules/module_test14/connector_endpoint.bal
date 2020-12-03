@@ -15,13 +15,13 @@
 // under the License.
 
 public client class Client1 {
-    public remote function createIssue()  returns Issue|error {
+    remote function createIssue()  returns Issue|error {
         return {};
     }
 }
 
 public client class Client2 {
-    public remote function getIssue()  returns Issue|error {
+    remote function getIssue()  returns Issue|error {
         return {};
     }
 }

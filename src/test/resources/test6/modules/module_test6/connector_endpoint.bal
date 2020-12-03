@@ -15,7 +15,7 @@
 // under the License.
 
 public client class Client {
-    public remote function createIssue()  returns Issue|error {
+    remote function createIssue()  returns Issue|error {
         return {};
     }
 }

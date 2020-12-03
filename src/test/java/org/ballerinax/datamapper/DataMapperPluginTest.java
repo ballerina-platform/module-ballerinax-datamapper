@@ -293,7 +293,15 @@ public class DataMapperPluginTest {
             Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test1/0.1.0"));
             Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test1"));
             Files.deleteIfExists(Paths.get(path + "cache/ballerinax"));
+            Files.deleteIfExists(Paths.get(path + "cache/tests_cache"));
             Files.deleteIfExists(Paths.get(path + "cache"));
+
+            Files.deleteIfExists(Paths.get(path + "balo/ballerinax-test1-any-0.1.0.balo"));
+            Files.deleteIfExists(Paths.get(path + "balo"));
+
+            Files.deleteIfExists(Paths.get(path + "bin/test1.jar"));
+            Files.deleteIfExists(Paths.get(path + "bin"));
+
             Files.deleteIfExists(Paths.get(path));
 
             path = "src/test/resources/test2/modules/module_test2/resources/";
@@ -388,7 +396,15 @@ public class DataMapperPluginTest {
             Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test5/0.1.0"));
             Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test5"));
             Files.deleteIfExists(Paths.get(path + "cache/ballerinax"));
+            Files.deleteIfExists(Paths.get(path + "cache/tests_cache"));
             Files.deleteIfExists(Paths.get(path + "cache"));
+
+            Files.deleteIfExists(Paths.get(path + "balo/ballerinax-test5-any-0.1.0.balo"));
+            Files.deleteIfExists(Paths.get(path + "balo"));
+
+            Files.deleteIfExists(Paths.get(path + "bin/test5.jar"));
+            Files.deleteIfExists(Paths.get(path + "bin"));
+
             Files.deleteIfExists(Paths.get(path));
 
             path = "src/test/resources/test6/modules/module_test6/resources/";
@@ -434,7 +450,15 @@ public class DataMapperPluginTest {
             Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test7/0.1.0"));
             Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test7"));
             Files.deleteIfExists(Paths.get(path + "cache/ballerinax"));
+            Files.deleteIfExists(Paths.get(path + "cache/tests_cache"));
             Files.deleteIfExists(Paths.get(path + "cache"));
+
+            Files.deleteIfExists(Paths.get(path + "balo/ballerinax-test7-any-0.1.0.balo"));
+            Files.deleteIfExists(Paths.get(path + "balo"));
+
+            Files.deleteIfExists(Paths.get(path + "bin/test7.jar"));
+            Files.deleteIfExists(Paths.get(path + "bin"));
+
             Files.deleteIfExists(Paths.get(path));
 
             path = "src/test/resources/test8/target/";
@@ -447,7 +471,15 @@ public class DataMapperPluginTest {
             Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test8/0.1.0"));
             Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test8"));
             Files.deleteIfExists(Paths.get(path + "cache/ballerinax"));
+            Files.deleteIfExists(Paths.get(path + "cache/tests_cache"));
             Files.deleteIfExists(Paths.get(path + "cache"));
+
+            Files.deleteIfExists(Paths.get(path + "balo/ballerinax-test8-any-0.1.0.balo"));
+            Files.deleteIfExists(Paths.get(path + "balo"));
+
+            Files.deleteIfExists(Paths.get(path + "bin/test8.jar"));
+            Files.deleteIfExists(Paths.get(path + "bin"));
+
             Files.deleteIfExists(Paths.get(path));
 
             path = "src/test/resources/test9/modules/module_test9/resources/";
@@ -470,7 +502,15 @@ public class DataMapperPluginTest {
             Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test9/0.1.0"));
             Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test9"));
             Files.deleteIfExists(Paths.get(path + "cache/ballerinax"));
+            Files.deleteIfExists(Paths.get(path + "cache/tests_cache"));
             Files.deleteIfExists(Paths.get(path + "cache"));
+
+            Files.deleteIfExists(Paths.get(path + "balo/ballerinax-test9-any-0.1.0.balo"));
+            Files.deleteIfExists(Paths.get(path + "balo"));
+
+            Files.deleteIfExists(Paths.get(path + "bin/test9.jar"));
+            Files.deleteIfExists(Paths.get(path + "bin"));
+
             Files.deleteIfExists(Paths.get(path));
 
             path = "src/test/resources/test10/modules/module_test10/resources/";
@@ -494,7 +534,15 @@ public class DataMapperPluginTest {
             Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test10/0.1.0"));
             Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test10"));
             Files.deleteIfExists(Paths.get(path + "cache/ballerinax"));
+            Files.deleteIfExists(Paths.get(path + "cache/tests_cache"));
             Files.deleteIfExists(Paths.get(path + "cache"));
+
+            Files.deleteIfExists(Paths.get(path + "balo/ballerinax-test10-any-0.1.0.balo"));
+            Files.deleteIfExists(Paths.get(path + "balo"));
+
+            Files.deleteIfExists(Paths.get(path + "bin/test10.jar"));
+            Files.deleteIfExists(Paths.get(path + "bin"));
+
             Files.deleteIfExists(Paths.get(path));
 
             path = "src/test/resources/test11/modules/module_test11/resources/";
@@ -517,7 +565,14 @@ public class DataMapperPluginTest {
             Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test11/0.1.0"));
             Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test11"));
             Files.deleteIfExists(Paths.get(path + "cache/ballerinax"));
+            Files.deleteIfExists(Paths.get(path + "cache/tests_cache"));
             Files.deleteIfExists(Paths.get(path + "cache"));
+
+            Files.deleteIfExists(Paths.get(path + "balo/ballerinax-test11-any-0.1.0.balo"));
+            Files.deleteIfExists(Paths.get(path + "balo"));
+
+            Files.deleteIfExists(Paths.get(path + "bin/test11.jar"));
+            Files.deleteIfExists(Paths.get(path + "bin"));
             Files.deleteIfExists(Paths.get(path));
 
             Files.deleteIfExists(Paths.get("src/test/resources/test12/modules/module_test12/resources/" +
@@ -535,7 +590,14 @@ public class DataMapperPluginTest {
             Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test12/0.1.0"));
             Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test12"));
             Files.deleteIfExists(Paths.get(path + "cache/ballerinax"));
+            Files.deleteIfExists(Paths.get(path + "cache/tests_cache"));
             Files.deleteIfExists(Paths.get(path + "cache"));
+
+            Files.deleteIfExists(Paths.get(path + "balo/ballerinax-test12-any-0.1.0.balo"));
+            Files.deleteIfExists(Paths.get(path + "balo"));
+
+            Files.deleteIfExists(Paths.get(path + "bin/test12.jar"));
+            Files.deleteIfExists(Paths.get(path + "bin"));
             Files.deleteIfExists(Paths.get(path));
 
             Files.deleteIfExists(Paths.get("src/test/resources/test13/modules/module_test13/resources/" +
@@ -553,7 +615,14 @@ public class DataMapperPluginTest {
             Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test13/0.1.0"));
             Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test13"));
             Files.deleteIfExists(Paths.get(path + "cache/ballerinax"));
+            Files.deleteIfExists(Paths.get(path + "cache/tests_cache"));
             Files.deleteIfExists(Paths.get(path + "cache"));
+
+            Files.deleteIfExists(Paths.get(path + "balo/ballerinax-test13-any-0.1.0.balo"));
+            Files.deleteIfExists(Paths.get(path + "balo"));
+
+            Files.deleteIfExists(Paths.get(path + "bin/test13.jar"));
+            Files.deleteIfExists(Paths.get(path + "bin"));
             Files.deleteIfExists(Paths.get(path));
 
             path = "src/test/resources/test14/modules/module_test14/resources/";
@@ -577,7 +646,14 @@ public class DataMapperPluginTest {
             Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test14/0.1.0"));
             Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test14"));
             Files.deleteIfExists(Paths.get(path + "cache/ballerinax"));
+            Files.deleteIfExists(Paths.get(path + "cache/tests_cache"));
             Files.deleteIfExists(Paths.get(path + "cache"));
+
+            Files.deleteIfExists(Paths.get(path + "balo/ballerinax-test14-any-0.1.0.balo"));
+            Files.deleteIfExists(Paths.get(path + "balo"));
+
+            Files.deleteIfExists(Paths.get(path + "bin/test14.jar"));
+            Files.deleteIfExists(Paths.get(path + "bin"));
             Files.deleteIfExists(Paths.get(path));
 
             path = "src/test/resources/test15/modules/module_test15/resources/";
@@ -597,7 +673,14 @@ public class DataMapperPluginTest {
             Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test15/0.1.0"));
             Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test15"));
             Files.deleteIfExists(Paths.get(path + "cache/ballerinax"));
+            Files.deleteIfExists(Paths.get(path + "cache/tests_cache"));
             Files.deleteIfExists(Paths.get(path + "cache"));
+
+            Files.deleteIfExists(Paths.get(path + "balo/ballerinax-test15-any-0.1.0.balo"));
+            Files.deleteIfExists(Paths.get(path + "balo"));
+
+            Files.deleteIfExists(Paths.get(path + "bin/test15.jar"));
+            Files.deleteIfExists(Paths.get(path + "bin"));
             Files.deleteIfExists(Paths.get(path));
 
         } catch (IOException e) {
