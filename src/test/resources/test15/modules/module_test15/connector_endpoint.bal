@@ -21,7 +21,7 @@ public client class '\ \/\:\@\[\`\{\~_Connector {
 
     }
 
-    public remote function '\ \/\:\@\[\`\{\~_Action() returns string {
+    remote function '\ \/\:\@\[\`\{\~_Action() returns string {
         string 'sample_String_2 = "this ";
         return 'sample_String_2 ;
     }
