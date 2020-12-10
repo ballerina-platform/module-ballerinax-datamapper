@@ -63,8 +63,7 @@ of attributes exist between the record type and its corresponding data JSON file
 validations, the compiler extension also extracts sample data nested within a particular data JSON 
 to separate top-level data JSON files.
 
-The extracted JSON files get written to the resources directory within the connector module's 
-`src` folder. However, the functions and schema JSON files are not required to be committed to a
+The extracted JSON files get written to the resources directory within the connector module's folder. However, the functions and schema JSON files are not required to be committed to a
 Github repository since they get generated automatically from the connector's Ballerina code. However, 
 the data files need to be version controlled.
 
