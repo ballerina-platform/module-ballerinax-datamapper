@@ -76,14 +76,14 @@ task copyStdlibs(type: Copy) {
         into("cache/bir/") {
             from "${artifactExtractedPath}/caches/bir"
         }
-        into("cache/balo/") {
-            from "${artifactExtractedPath}/caches/balo"
+        into("cache/bala/") {
+            from "${artifactExtractedPath}/caches/bala"
         }
         into("cache/jar/") {
             from "${artifactExtractedPath}/caches/jar"
         }
-        into("repo/balo") {
-            from "${artifactExtractedPath}/balo/"
+        into("repo/bala") {
+            from "${artifactExtractedPath}/bala/"
         }
     }
 }

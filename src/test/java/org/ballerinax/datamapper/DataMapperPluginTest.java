@@ -296,8 +296,8 @@ public class DataMapperPluginTest {
             Files.deleteIfExists(Paths.get(path + "cache/tests_cache"));
             Files.deleteIfExists(Paths.get(path + "cache"));
 
-            Files.deleteIfExists(Paths.get(path + "balo/ballerinax-test1-any-0.1.0.balo"));
-            Files.deleteIfExists(Paths.get(path + "balo"));
+            Files.deleteIfExists(Paths.get(path + "bala/ballerinax-test1-any-0.1.0.bala"));
+            Files.deleteIfExists(Paths.get(path + "bala"));
 
             Files.deleteIfExists(Paths.get(path + "bin/test1.jar"));
             Files.deleteIfExists(Paths.get(path + "bin"));
@@ -399,8 +399,8 @@ public class DataMapperPluginTest {
             Files.deleteIfExists(Paths.get(path + "cache/tests_cache"));
             Files.deleteIfExists(Paths.get(path + "cache"));
 
-            Files.deleteIfExists(Paths.get(path + "balo/ballerinax-test5-any-0.1.0.balo"));
-            Files.deleteIfExists(Paths.get(path + "balo"));
+            Files.deleteIfExists(Paths.get(path + "bala/ballerinax-test5-any-0.1.0.bala"));
+            Files.deleteIfExists(Paths.get(path + "bala"));
 
             Files.deleteIfExists(Paths.get(path + "bin/test5.jar"));
             Files.deleteIfExists(Paths.get(path + "bin"));
@@ -453,8 +453,8 @@ public class DataMapperPluginTest {
             Files.deleteIfExists(Paths.get(path + "cache/tests_cache"));
             Files.deleteIfExists(Paths.get(path + "cache"));
 
-            Files.deleteIfExists(Paths.get(path + "balo/ballerinax-test7-any-0.1.0.balo"));
-            Files.deleteIfExists(Paths.get(path + "balo"));
+            Files.deleteIfExists(Paths.get(path + "bala/ballerinax-test7-any-0.1.0.bala"));
+            Files.deleteIfExists(Paths.get(path + "bala"));
 
             Files.deleteIfExists(Paths.get(path + "bin/test7.jar"));
             Files.deleteIfExists(Paths.get(path + "bin"));
@@ -474,8 +474,8 @@ public class DataMapperPluginTest {
             Files.deleteIfExists(Paths.get(path + "cache/tests_cache"));
             Files.deleteIfExists(Paths.get(path + "cache"));
 
-            Files.deleteIfExists(Paths.get(path + "balo/ballerinax-test8-any-0.1.0.balo"));
-            Files.deleteIfExists(Paths.get(path + "balo"));
+            Files.deleteIfExists(Paths.get(path + "bala/ballerinax-test8-any-0.1.0.bala"));
+            Files.deleteIfExists(Paths.get(path + "bala"));
 
             Files.deleteIfExists(Paths.get(path + "bin/test8.jar"));
             Files.deleteIfExists(Paths.get(path + "bin"));
@@ -505,8 +505,8 @@ public class DataMapperPluginTest {
             Files.deleteIfExists(Paths.get(path + "cache/tests_cache"));
             Files.deleteIfExists(Paths.get(path + "cache"));
 
-            Files.deleteIfExists(Paths.get(path + "balo/ballerinax-test9-any-0.1.0.balo"));
-            Files.deleteIfExists(Paths.get(path + "balo"));
+            Files.deleteIfExists(Paths.get(path + "bala/ballerinax-test9-any-0.1.0.bala"));
+            Files.deleteIfExists(Paths.get(path + "bala"));
 
             Files.deleteIfExists(Paths.get(path + "bin/test9.jar"));
             Files.deleteIfExists(Paths.get(path + "bin"));
@@ -537,8 +537,8 @@ public class DataMapperPluginTest {
             Files.deleteIfExists(Paths.get(path + "cache/tests_cache"));
             Files.deleteIfExists(Paths.get(path + "cache"));
 
-            Files.deleteIfExists(Paths.get(path + "balo/ballerinax-test10-any-0.1.0.balo"));
-            Files.deleteIfExists(Paths.get(path + "balo"));
+            Files.deleteIfExists(Paths.get(path + "bala/ballerinax-test10-any-0.1.0.bala"));
+            Files.deleteIfExists(Paths.get(path + "bala"));
 
             Files.deleteIfExists(Paths.get(path + "bin/test10.jar"));
             Files.deleteIfExists(Paths.get(path + "bin"));
@@ -568,8 +568,8 @@ public class DataMapperPluginTest {
             Files.deleteIfExists(Paths.get(path + "cache/tests_cache"));
             Files.deleteIfExists(Paths.get(path + "cache"));
 
-            Files.deleteIfExists(Paths.get(path + "balo/ballerinax-test11-any-0.1.0.balo"));
-            Files.deleteIfExists(Paths.get(path + "balo"));
+            Files.deleteIfExists(Paths.get(path + "bala/ballerinax-test11-any-0.1.0.bala"));
+            Files.deleteIfExists(Paths.get(path + "bala"));
 
             Files.deleteIfExists(Paths.get(path + "bin/test11.jar"));
             Files.deleteIfExists(Paths.get(path + "bin"));
@@ -593,8 +593,8 @@ public class DataMapperPluginTest {
             Files.deleteIfExists(Paths.get(path + "cache/tests_cache"));
             Files.deleteIfExists(Paths.get(path + "cache"));
 
-            Files.deleteIfExists(Paths.get(path + "balo/ballerinax-test12-any-0.1.0.balo"));
-            Files.deleteIfExists(Paths.get(path + "balo"));
+            Files.deleteIfExists(Paths.get(path + "bala/ballerinax-test12-any-0.1.0.bala"));
+            Files.deleteIfExists(Paths.get(path + "bala"));
 
             Files.deleteIfExists(Paths.get(path + "bin/test12.jar"));
             Files.deleteIfExists(Paths.get(path + "bin"));
@@ -618,8 +618,8 @@ public class DataMapperPluginTest {
             Files.deleteIfExists(Paths.get(path + "cache/tests_cache"));
             Files.deleteIfExists(Paths.get(path + "cache"));
 
-            Files.deleteIfExists(Paths.get(path + "balo/ballerinax-test13-any-0.1.0.balo"));
-            Files.deleteIfExists(Paths.get(path + "balo"));
+            Files.deleteIfExists(Paths.get(path + "bala/ballerinax-test13-any-0.1.0.bala"));
+            Files.deleteIfExists(Paths.get(path + "bala"));
 
             Files.deleteIfExists(Paths.get(path + "bin/test13.jar"));
             Files.deleteIfExists(Paths.get(path + "bin"));
@@ -649,8 +649,8 @@ public class DataMapperPluginTest {
             Files.deleteIfExists(Paths.get(path + "cache/tests_cache"));
             Files.deleteIfExists(Paths.get(path + "cache"));
 
-            Files.deleteIfExists(Paths.get(path + "balo/ballerinax-test14-any-0.1.0.balo"));
-            Files.deleteIfExists(Paths.get(path + "balo"));
+            Files.deleteIfExists(Paths.get(path + "bala/ballerinax-test14-any-0.1.0.bala"));
+            Files.deleteIfExists(Paths.get(path + "bala"));
 
             Files.deleteIfExists(Paths.get(path + "bin/test14.jar"));
             Files.deleteIfExists(Paths.get(path + "bin"));
@@ -676,8 +676,8 @@ public class DataMapperPluginTest {
             Files.deleteIfExists(Paths.get(path + "cache/tests_cache"));
             Files.deleteIfExists(Paths.get(path + "cache"));
 
-            Files.deleteIfExists(Paths.get(path + "balo/ballerinax-test15-any-0.1.0.balo"));
-            Files.deleteIfExists(Paths.get(path + "balo"));
+            Files.deleteIfExists(Paths.get(path + "bala/ballerinax-test15-any-0.1.0.bala"));
+            Files.deleteIfExists(Paths.get(path + "bala"));
 
             Files.deleteIfExists(Paths.get(path + "bin/test15.jar"));
             Files.deleteIfExists(Paths.get(path + "bin"));
