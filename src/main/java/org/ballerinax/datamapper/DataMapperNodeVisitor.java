@@ -18,10 +18,10 @@
 
 package org.ballerinax.datamapper;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.ballerina.compiler.api.SemanticModel;
 import io.ballerina.compiler.api.impl.symbols.BallerinaClassSymbol;
-import io.ballerina.compiler.api.impl.symbols.BallerinaRecordTypeSymbol;
-import io.ballerina.compiler.api.impl.symbols.BallerinaTypeDefinitionSymbol;
 import io.ballerina.compiler.api.symbols.*;
 import io.ballerina.compiler.syntax.tree.*;
 import io.ballerina.projects.ModuleCompilation;
@@ -34,16 +34,16 @@ import java.util.*;
  * Visitor to extract Record Type Structure information.
  */
 public class DataMapperNodeVisitor extends NodeVisitor {
-    private final HashMap<String, Map<String, String>> recordTypes;
+    private final HashMap<String, String> recordTypes;
     private final HashMap<String, Map<String, FunctionRecord>> clientMap;
     private SemanticModel model;
 
     public DataMapperNodeVisitor() {
-        this.recordTypes = new HashMap<>();
+        this.recordTypes = new HashMap<String, String>();
         this.clientMap = new HashMap<>();
     }
 
-    public HashMap<String, Map<String, String>> getRecordTypes() {
+    public HashMap<String, String> getRecordTypes() {
         return recordTypes;
     }
 
@@ -56,28 +56,38 @@ public class DataMapperNodeVisitor extends NodeVisitor {
         this.model = compilation.getSemanticModel();
     }
 
-    public Map<String, String> getFieldTypes(Map<String, RecordFieldSymbol> fieldSymbolMap){
+    private String getFieldTypes(Map<String, RecordFieldSymbol> fieldSymbolMap){
         Iterator<String> iterator = fieldSymbolMap.keySet().iterator();
         Map<String, String> fieldSymbols = new HashMap<>();
+        String serialized = null;
         while (iterator.hasNext()) {
             String fieldName = iterator.next();
-            String fieldType = fieldSymbolMap.get(fieldName).typeDescriptor().typeKind().toString();
+            String fieldType = fieldSymbolMap.get(fieldName).typeDescriptor().signature();
             fieldSymbols.put(fieldName, fieldType);
         }
-        return fieldSymbols;
+        try {
+            serialized = new ObjectMapper().writeValueAsString(fieldSymbols);
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+        }
+        return serialized;
     }
-
 
     @Override
     public void visit(TypeDefinitionNode typeDefinitionNode) {
         if (typeDefinitionNode.typeDescriptor().kind() == SyntaxKind.RECORD_TYPE_DESC) {
-            if(this.model.symbol(typeDefinitionNode).isPresent()){
-                Symbol recordSymbol = this.model.symbol(typeDefinitionNode).get();
-                if(recordSymbol.getName().isPresent()){
-                    String recordName = recordSymbol.getName().get();
-                    Map<String, RecordFieldSymbol> fieldSymbolMap = ((BallerinaRecordTypeSymbol) ((BallerinaTypeDefinitionSymbol) recordSymbol).typeDescriptor()).fieldDescriptors();
-                    Map<String, String> fieldSymbols = getFieldTypes(fieldSymbolMap);
-                    this.recordTypes.put(recordName, fieldSymbols);
+            Optional<Symbol> recordSymbolOpt = this.model.symbol(typeDefinitionNode);
+            if(recordSymbolOpt.isPresent()){
+                Symbol recordSymbol = recordSymbolOpt.get();
+                Optional<String> recordNameOpt = recordSymbol.getName();
+                if(recordNameOpt.isPresent()){
+                    String recordName = recordNameOpt.get();
+                    String recordSignature = recordSymbol.getModule().get().id().toString();
+                    recordName = recordSignature + ":" + recordName;
+                    Map<String, RecordFieldSymbol> fieldSymbolMap = ((RecordTypeSymbol) ((TypeDefinitionSymbol) recordSymbol).typeDescriptor()).fieldDescriptors();
+                    String serialized = getFieldTypes(fieldSymbolMap);
+                    serialized = "{\"" + recordName + "\":" + serialized + "}";
+                    this.recordTypes.put(recordName, serialized);
                 }
             }
         }
