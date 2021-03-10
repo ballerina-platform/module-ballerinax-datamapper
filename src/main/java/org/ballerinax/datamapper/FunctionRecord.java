@@ -23,7 +23,7 @@ import java.util.HashMap;
 import java.util.List;
 
 class FunctionRecord {
-    private HashMap<String, String> parameters;
+    private HashMap<String, List<String>> parameters;
     private List<String> returnTypes;
 
     public FunctionRecord() {
@@ -31,16 +31,12 @@ class FunctionRecord {
         returnTypes = new ArrayList<>();
     }
 
-    public HashMap<String, String> getParameters() {
+    public HashMap<String, List<String>> getParameters() {
         return parameters;
     }
 
-    public void addParameter(String name, String type) {
+    public void addParameter(String name, List<String> type) {
         this.parameters.put(name, type);
-    }
-
-    public void setParameters(HashMap<String, String> parameters) {
-        this.parameters = parameters;
     }
 
     public List<String> getReturnTypes() {

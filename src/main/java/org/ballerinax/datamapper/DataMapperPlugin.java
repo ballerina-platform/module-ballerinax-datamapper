@@ -156,7 +156,7 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
                     while (iterator.hasNext()) {
                         Map.Entry<String, FunctionRecord> function = iterator.next();
                         String functionName = function.getKey();
-                        HashMap<String, String> parameters = function.getValue().getParameters();
+                        HashMap<String, List<String>> parameters = function.getValue().getParameters();
                         functions.append("{\"function\":{\"name\":\"" + encode(functionName) +
                                 "\",\"requiredParams\":[");
                         if (!parameters.isEmpty()) {
@@ -165,20 +165,27 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
                                 String parameterName = iterator1.next();
                                 functions.append("{\"");
                                 functions.append(encode(parameterName));
-                                functions.append("\":\"");
-                                String typeVariable = parameters.get(parameterName);
-                                functions.append(typeVariable);
-                                if (typeVariable.endsWith("?")) {
-                                    this.typeSet.add(typeVariable.substring(0, typeVariable.length() - 1));
-                                } else if (typeVariable.endsWith("[]")) {
-                                    this.typeSet.add(typeVariable.substring(0, typeVariable.length() - 2));
-                                } else {
-                                    this.typeSet.add(typeVariable);
+                                functions.append("\":[\"");
+                                List<String> typeVariables = parameters.get(parameterName);
+                                for (Iterator<String> iter = typeVariables.iterator(); iter.hasNext(); ) {
+                                    String typeVariable = iter.next();
+                                    functions.append(typeVariable);
+                                    if (typeVariable.endsWith("?")) {
+                                        this.typeSet.add(typeVariable.substring(0, typeVariable.length() - 1));
+                                    } else if (typeVariable.endsWith("[]")) {
+                                        this.typeSet.add(typeVariable.substring(0, typeVariable.length() - 2));
+                                    } else {
+                                        this.typeSet.add(typeVariable);
+                                    }
+                                    if (iter.hasNext()) {
+                                        functions.append("\", \"");
+                                    }
                                 }
+                                functions.append("\"]");
                                 if (iterator1.hasNext()) {
-                                    functions.append("\"},");
+                                    functions.append("},");
                                 } else {
-                                    functions.append("\"}");
+                                    functions.append("}");
                                 }
                             }
                         }

@@ -42,6 +42,7 @@ import io.ballerina.projects.Module;
 import io.ballerina.projects.ModuleCompilation;
 import org.ballerinax.datamapper.exceptions.DataMapperException;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -134,11 +135,24 @@ public class DataMapperNodeVisitor extends NodeVisitor {
                         }
                         if (checkForRemote) {
                             String functionName = method.getName().get();
+                            List<String> paraType = new ArrayList<>();
                             FunctionRecord functionRecord = new FunctionRecord();
                             for (ParameterSymbol parameter : method.typeDescriptor().parameters()) {
                                 if (parameter.getName().isPresent()) {
                                     String parameterName = parameter.getName().get();
-                                    String paraType = parameter.typeDescriptor().typeKind().toString();
+                                    if (parameter.typeDescriptor().typeKind() == TypeDescKind.UNION) {
+                                        List<TypeSymbol> paraList = ((UnionTypeSymbol) parameter.typeDescriptor()).
+                                                memberTypeDescriptors();
+                                        for (TypeSymbol typeSymbol : paraList) {
+                                            if (typeSymbol.typeKind() == TypeDescKind.ERROR) {
+                                                continue;
+                                            } else {
+                                                paraType.add(typeSymbol.signature());
+                                            }
+                                        }
+                                    } else {
+                                        paraType.add(parameter.typeDescriptor().signature());
+                                    }
                                     functionRecord.addParameter(parameterName, paraType);
                                 }
                             }
