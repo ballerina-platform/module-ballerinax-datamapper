@@ -307,6 +307,18 @@ public class DataMapperPluginTest {
         Assert.assertEquals(result.getErrorCount(), 0);
     }
 
+    @Test
+    public void testHappyPathWithUnionParameterTypes() {
+        CompileResult result = BCompileUtil.compile("test19/modules/module_test19");
+        File jsonFile = new File("src/test/resources/test19/modules/module_test19/resources/Assignee_schema.json");
+        Assert.assertEquals(jsonFile.exists(), true);
+        jsonFile = new File("src/test/resources/test19/modules/module_test19/resources/Client_functions.json");
+        Assert.assertEquals(jsonFile.exists(), true);
+        jsonFile = new File("src/test/resources/test19/modules/module_test19/resources/Creator_schema.json");
+        Assert.assertEquals(jsonFile.exists(), true);
+        Assert.assertEquals(result.getErrorCount(), 0);
+    }
+
     public static boolean deleteDirectory(Path directoryPath) {
         File directory = new File(String.valueOf(directoryPath));
         if (directory.isDirectory()) {
@@ -492,6 +504,12 @@ public class DataMapperPluginTest {
             deleteDirectory(Path.of(path));
 
             path = "src/test/resources/test18/target/";
+            deleteDirectory(Path.of(path));
+
+            path = "src/test/resources/test19/modules/module_test19/resources/";
+            deleteDirectory(Path.of(path));
+
+            path = "src/test/resources/test19/target/";
             deleteDirectory(Path.of(path));
 
         } catch (IOException e) {
