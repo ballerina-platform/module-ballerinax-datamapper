@@ -21,36 +21,30 @@ package org.ballerinax.datamapper;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonLocation;
 import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import io.ballerina.compiler.api.SemanticModel;
+import io.ballerina.compiler.api.impl.symbols.BallerinaClassSymbol;
+import io.ballerina.compiler.api.symbols.Qualifier;
+import io.ballerina.compiler.api.symbols.Symbol;
+import io.ballerina.compiler.api.symbols.SymbolKind;
+import io.ballerina.compiler.syntax.tree.SyntaxTree;
+import io.ballerina.projects.DocumentId;
+import io.ballerina.projects.Module;
+import io.ballerina.projects.ModuleId;
+import io.ballerina.projects.Package;
+import io.ballerina.projects.Project;
+import io.ballerina.tools.diagnostics.Diagnostic;
 import io.ballerina.tools.diagnostics.Location;
-import org.ballerinalang.compiler.CompilerOptionName;
 import org.ballerinalang.compiler.plugins.AbstractCompilerPlugin;
-import org.ballerinalang.model.elements.Flag;
-import org.ballerinalang.model.elements.PackageID;
-import org.ballerinalang.model.tree.NodeKind;
-import org.ballerinalang.model.tree.PackageNode;
-import org.ballerinalang.model.tree.TopLevelNode;
 import org.ballerinalang.util.diagnostic.DiagnosticLog;
 import org.ballerinax.datamapper.diagnostic.DataMapperDiagnosticLog;
 import org.ballerinax.datamapper.diagnostic.DiagnosticErrorCode;
 import org.ballerinax.datamapper.exceptions.DataMapperException;
 import org.ballerinax.datamapper.util.Utils;
 import org.wso2.ballerinalang.compiler.diagnostic.BLangDiagnosticLocation;
-import org.wso2.ballerinalang.compiler.semantics.model.symbols.BRecordTypeSymbol;
-import org.wso2.ballerinalang.compiler.tree.BLangClassDefinition;
-import org.wso2.ballerinalang.compiler.tree.BLangFunction;
-import org.wso2.ballerinalang.compiler.tree.BLangPackage;
-import org.wso2.ballerinalang.compiler.tree.BLangSimpleVariable;
-import org.wso2.ballerinalang.compiler.tree.BLangTypeDefinition;
-import org.wso2.ballerinalang.compiler.tree.types.BLangType;
-import org.wso2.ballerinalang.compiler.tree.types.BLangUnionTypeNode;
-import org.wso2.ballerinalang.compiler.util.CompilerContext;
-import org.wso2.ballerinalang.compiler.util.CompilerOptions;
-import org.wso2.ballerinalang.util.Flags;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -60,13 +54,15 @@ import java.io.Reader;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -79,94 +75,173 @@ import java.util.stream.Stream;
  */
 public class DataMapperPlugin extends AbstractCompilerPlugin {
     public static final String URL_ENCODED_COLON = "%3A";
-    private DataMapperDiagnosticLog dlog;
+    private DataMapperDiagnosticLog dataMapperLog;
     private HashMap<String, ArrayList<JsonNode>> sampleDataMap;
     private HashMap<String, String> typeInformationMap;
     private HashSet<String> typeSet;
-    private StringBuilder functions;
+    public StringBuilder functions;
     private Location nodePosition;
-    private BLangPackage lastPackageNode;
     private String projectSourceFolder;
     private boolean clientFlag;
     private boolean noFunctionsFlag;
     private JsonParser parser;
     private String currentTypeStructure;
-    private CompilerContext context = null;
     private String projectDirectory;
+    private DiagnosticLog dlog;
 
-    @Override
-    public void setCompilerContext(CompilerContext ctx) {
-        context = ctx;
-        CompilerOptions options = CompilerOptions.getInstance(ctx);
-        projectDirectory = options.get(CompilerOptionName.PROJECT_DIR);
-        this.dlog = DataMapperDiagnosticLog.getInstance(ctx);
+    public DataMapperPlugin() {
+        this.sampleDataMap = new HashMap<String, ArrayList<JsonNode>>();
+        this.typeSet = new HashSet<String>();
+        this.functions = new StringBuilder();
+        this.typeInformationMap = new HashMap<>();
     }
 
     @Override
     public void init(DiagnosticLog diagnosticLog) {
-        this.sampleDataMap = new HashMap<String, ArrayList<JsonNode>>();
-        this.typeInformationMap = new HashMap<String, String>();
-        this.typeSet = new HashSet<String>();
-        this.functions = new StringBuilder();
+        this.dlog = diagnosticLog;
     }
 
+
     @Override
-    public void process(PackageNode packageNode) {
-        for (TopLevelNode node : ((BLangPackage) packageNode).topLevelNodes) {
-            if (node instanceof BLangClassDefinition) {
-                if ((((BLangClassDefinition) node).symbol.flags & Flags.CLIENT) == Flags.CLIENT) {
-                    clientFlag = true;
-                    break;
-                }
-            }
-        }
+    public List<Diagnostic> codeAnalyze(Project project) {
+        this.dataMapperLog = new DataMapperDiagnosticLog();
+        projectDirectory = project.sourceRoot().toString();
+        Package currentPackage = project.currentPackage();
+        Collection<ModuleId> moduleIds = currentPackage.moduleIds();
+        clientFlag = checkForClient(currentPackage, moduleIds);
 
         if (clientFlag) {
-            dlog.setCurrentPackageId(((BLangPackage) packageNode).packageID);
-            for (TopLevelNode topLevelNode : ((BLangPackage) packageNode).topLevelNodes) {
-                if (topLevelNode.getKind() == NodeKind.CLASS_DEFN &&
-                        (((BLangClassDefinition) topLevelNode).symbol.flags & Flags.CLIENT) == Flags.CLIENT) {
+            String organization = currentPackage.packageOrg().toString();
+            String versionNumber = currentPackage.packageVersion().toString();
+            for (ModuleId moduleId : moduleIds) {
+                String moduleName = moduleId.moduleName();
+
+                Module module = currentPackage.module(moduleId);
+                DataMapperNodeVisitor nodeVisitor = new DataMapperNodeVisitor();
+                nodeVisitor.setModule(module);
+                for (DocumentId documentId : module.documentIds()) {
+                    SyntaxTree syntaxTree = module.document(documentId).syntaxTree();
+                    syntaxTree.rootNode().accept(nodeVisitor);
                     try {
-                        extractFunctionCalls((BLangClassDefinition) topLevelNode);
-                    } catch (Exception e) {
+                        writeFunctionJson(nodeVisitor.getClientMap(), organization, moduleName, versionNumber);
+                    } catch (IOException e) {
                         throw new DataMapperException(e);
                     }
-                } else if (topLevelNode.getKind() == NodeKind.TYPE_DEFINITION &&
-                        ((BLangTypeDefinition) topLevelNode).typeNode.getKind() == NodeKind.RECORD_TYPE) {
-                    BLangTypeDefinition recordTypeDef = (BLangTypeDefinition) topLevelNode;
-                    Map<String, String> structureMap = new LinkedHashMap<String, String>();
-                    DataMapperStructureVisitor visitor = new DataMapperStructureVisitor(structureMap);
-                    visitor.visit(recordTypeDef);
-                    String typeName = null;
-                    String serialized = null;
-                    if (recordTypeDef.symbol instanceof  BRecordTypeSymbol) {
-                        typeName = ((BRecordTypeSymbol) recordTypeDef.symbol).toString();
-                        String[] typeNameSegments = typeName.split("/");
-                        String organizationName = typeNameSegments[0];
-                        String[] moduleNameSegments = typeNameSegments[1].split(":");
-
-                        String encodedTypeName = encode(organizationName) + "/" + encode(moduleNameSegments[0]) +
-                                ":" + encode(moduleNameSegments[1]) + ":" + encode(moduleNameSegments[2]);
-                        try {
-                            serialized = new ObjectMapper().writeValueAsString(structureMap);
-                            serialized = "{\"" + encodedTypeName + "\":" + serialized + "}";
-                        } catch (JsonProcessingException e) {
-                            dlog.error(packageNode.getPosition(),
-                                    DiagnosticErrorCode.ERROR_INVALID_JSON_CONTENT, e.getMessage());
-                        }
-                        structureMap.clear();
-                        this.typeInformationMap.put(encodedTypeName, serialized);
+                    int i = 0;
+                    if (!nodeVisitor.getRecordTypes().isEmpty()) {
+                        typeInformationMap.putAll(nodeVisitor.getRecordTypes());
                     }
                 }
             }
+        }
+        pluginExecutionCompleted();
 
-            nodePosition = packageNode.getPosition();
-            lastPackageNode = (BLangPackage) packageNode;
+        if (this.dataMapperLog.getDataMapperPluginDiagnostic().isEmpty()) {
+            return Collections.emptyList();
+        } else {
+            return this.dataMapperLog.getDataMapperPluginDiagnostic();
         }
     }
 
-    @Override
-    public void pluginExecutionCompleted(PackageID packageID) {
+    private void writeFunctionJson(HashMap<String, Map<String, FunctionRecord>> clientMap, String organization,
+                                   String moduleName, String versionNumber) throws IOException {
+        if (!clientMap.isEmpty()) {
+            for (Map.Entry<String, Map<String, FunctionRecord>> client : clientMap.entrySet()) {
+                String clientName = client.getKey();
+                Map<String, FunctionRecord> functionMaps = client.getValue();
+                boolean flag = false;
+                if (!functionMaps.isEmpty()) {
+                    noFunctionsFlag = false;
+                    Iterator<Map.Entry<String, FunctionRecord>> iterator = functionMaps.entrySet().iterator();
+                    while (iterator.hasNext()) {
+                        Map.Entry<String, FunctionRecord> function = iterator.next();
+                        String functionName = function.getKey();
+                        HashMap<String, List<String>> parameters = function.getValue().getParameters();
+                        functions.append("{\"function\":{\"name\":\"" + encode(functionName) +
+                                "\",\"requiredParams\":[");
+                        if (!parameters.isEmpty()) {
+                            Iterator<String> iterator1 = function.getValue().getParameters().keySet().iterator();
+                            while (iterator1.hasNext()) {
+                                String parameterName = iterator1.next();
+                                functions.append("{\"");
+                                functions.append(encode(parameterName));
+                                functions.append("\":[\"");
+                                List<String> typeVariables = parameters.get(parameterName);
+                                for (Iterator<String> iter = typeVariables.iterator(); iter.hasNext(); ) {
+                                    String typeVariable = iter.next();
+                                    functions.append(typeVariable);
+                                    if (typeVariable.endsWith("?")) {
+                                        this.typeSet.add(typeVariable.substring(0, typeVariable.length() - 1));
+                                    } else if (typeVariable.endsWith("[]")) {
+                                        this.typeSet.add(typeVariable.substring(0, typeVariable.length() - 2));
+                                    } else {
+                                        this.typeSet.add(typeVariable);
+                                    }
+                                    if (iter.hasNext()) {
+                                        functions.append("\", \"");
+                                    }
+                                }
+                                functions.append("\"]");
+                                if (iterator1.hasNext()) {
+                                    functions.append("},");
+                                } else {
+                                    functions.append("}");
+                                }
+                            }
+                        }
+                        functions.append("],\"returnType\":[\"");
+                        List<String> returnTypes = function.getValue().getReturnTypes();
+                        for (Iterator<String> iter = returnTypes.iterator(); iter.hasNext(); ) {
+                            String returnType = iter.next();
+                            functions.append(returnType);
+                            if (returnType.endsWith("?")) {
+                                this.typeSet.add(returnType.substring(0, returnType.length() - 1));
+                            } else if (returnType.endsWith("[]")) {
+                                this.typeSet.add(returnType.substring(0, returnType.length() - 2));
+                            } else {
+                                this.typeSet.add(returnType);
+                            }
+                            if (iter.hasNext()) {
+                                functions.append("\", \"");
+                            }
+                        }
+                        functions.append("\"]");
+
+                        flag = iterator.hasNext();
+
+                        if (flag) {
+                            functions.append("}},");
+                        } else {
+                            functions.append("}}");
+                        }
+                    }
+                }
+
+                if (functions.length() != 0) {
+                    String functionsJson = functions.toString();
+
+                    if (functionsJson.endsWith(",")) {
+                        functionsJson = functionsJson.substring(0, functionsJson.lastIndexOf(","));
+                    }
+
+                    functionsJson = "{\"" + encode(organization) + "/" + encode(moduleName) + ":" + versionNumber +
+                            "\" : " + "[" + functionsJson + "]}";
+                    functions = new StringBuilder();
+
+                    String functionsFileName = encode(clientName) + "_functions.json";
+                    moduleName = moduleName.substring(moduleName.indexOf(".") + 1);
+                    Path targetFunctionsFilePath = Paths.get(projectDirectory, "modules",
+                            moduleName, "resources", functionsFileName);
+                    Utils.writeToFile(functionsJson, targetFunctionsFilePath);
+                } else {
+                    noFunctionsFlag = true;
+                }
+            }
+        }
+    }
+
+
+    public void pluginExecutionCompleted() {
         if (!clientFlag || noFunctionsFlag) {
             return;
         }
@@ -245,6 +320,7 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
     }
 
     private void processSampleDataFiles(String moduleName) {
+        moduleName = moduleName.substring(moduleName.indexOf(".") + 1);
         Path issueDataFilePath = Paths.get(projectDirectory, "modules", moduleName, "resources");
         List<String> listOfSampleDataJSONFiles = null;
 
@@ -261,7 +337,7 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
                     Location position = new BLangDiagnosticLocation(path,
                             location.getLineNr() - 1, location.getLineNr() - 1,
                             location.getColumnNr() - 1, location.getColumnNr() - 1);
-                    dlog.error(position, DiagnosticErrorCode.ERROR_INVALID_JSON_CONTENT,
+                    dataMapperLog.addDiagnostics(position, DiagnosticErrorCode.ERROR_INVALID_JSON_CONTENT,
                             getCustomizedErrorMessage(e));
                 }
             }
@@ -293,6 +369,8 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
                 sb.append("]}");
                 Utils.writeToFile(sb.toString(), targetStructureFilePath);
             }
+        } catch (NoSuchFileException e) {
+            // safe to ignore
         } catch (IOException e) {
             throw new DataMapperException(e);
         }
@@ -302,7 +380,7 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
         JsonFactory factory = new JsonFactory();
         InputStream inputStream = new FileInputStream(path);
         Reader fileReader = new InputStreamReader(inputStream, "UTF-8");
-        parser  = factory.createParser(fileReader);
+        parser = factory.createParser(fileReader);
 
         List<String> messages = new ArrayList<String>();
         String typeName = null;
@@ -363,7 +441,7 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
                         Location position = new BLangDiagnosticLocation(path,
                                 startLocation.getLineNr() - 1, endLocation.getLineNr() - 1,
                                 startLocation.getColumnNr() - 1, endLocation.getColumnNr() - 1);
-                        dlog.error(position, DiagnosticErrorCode.ERROR_INVALID_ATTRIBUTE_COUNT,
+                        dataMapperLog.addDiagnostics(position, DiagnosticErrorCode.ERROR_INVALID_ATTRIBUTE_COUNT,
                                 expectedNumberOfAttributes, attributeCounter);
                     } else {
                         if (!typeStack.isEmpty()) {
@@ -412,8 +490,10 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
                             JsonLocation location = parser.getCurrentLocation();
                             Location position = new BLangDiagnosticLocation(path,
                                     location.getLineNr() - 1, location.getLineNr() - 1,
-                                    location.getColumnNr() - (name.length() + 6), location.getColumnNr() - 4);
-                            dlog.error(position, DiagnosticErrorCode.ERROR_INVALID_ATTRIBUTE_NAME, typeName, name);
+                                    location.getColumnNr() - (name.length() + 6),
+                                    location.getColumnNr() - 4);
+                            dataMapperLog.addDiagnostics(position, DiagnosticErrorCode.ERROR_INVALID_ATTRIBUTE_NAME,
+                                    typeName, name);
                         }
                         attributeCounter++;
                     } else {
@@ -446,8 +526,10 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
                             JsonLocation location = parser.getCurrentLocation();
                             Location position = new BLangDiagnosticLocation(path,
                                     location.getLineNr(), location.getLineNr(),
-                                    location.getColumnNr() - (name.length() + 5), location.getColumnNr() - 3);
-                            dlog.error(position, DiagnosticErrorCode.ERROR_INVALID_ATTRIBUTE_NAME, typeName, name);
+                                    location.getColumnNr() - (name.length() + 5),
+                                    location.getColumnNr() - 3);
+                            dataMapperLog.addDiagnostics(position, DiagnosticErrorCode.ERROR_INVALID_ATTRIBUTE_NAME,
+                                    typeName, name);
                         }
 
                         counter--;
@@ -473,7 +555,7 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
                 case VALUE_NULL:
                     break;
                 default:
-                    dlog.error(nodePosition, DiagnosticErrorCode.ERROR_INVALID_JSON_TOKEN, jsonToken);
+                    dataMapperLog.addDiagnostics(nodePosition, DiagnosticErrorCode.ERROR_INVALID_JSON_TOKEN, jsonToken);
                     break;
             }
         }
@@ -487,111 +569,6 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
         return result;
     }
 
-    private void extractFunctionCalls(BLangClassDefinition typeDefinition) throws IOException {
-        noFunctionsFlag = false;
-        String name = typeDefinition.name.toString();
-        Iterator<BLangFunction> iterator = typeDefinition.functions.iterator();
-        boolean flag = false;
-        while (iterator.hasNext()) {
-            BLangFunction function =  iterator.next();
-            if (function.flagSet.contains(Flag.REMOTE)) {
-                functions.append("{\"function\":{\"name\":\"" + encode(function.name.toString()) +
-                        "\",\"requiredParams\":[");
-                Iterator<BLangSimpleVariable> iterator2 = function.requiredParams.iterator();
-                while (iterator2.hasNext()) {
-                    BLangSimpleVariable requiredParam = iterator2.next();
-                    functions.append("{\"");
-                    functions.append(encode(requiredParam.name.toString()));
-                    functions.append("\":\"");
-                    String typeVariable = requiredParam.symbol.type.toString();
-                    functions.append(typeVariable);
-                    if (typeVariable.endsWith("?")) {
-                        this.typeSet.add(typeVariable.substring(0, typeVariable.length() - 1));
-                    } else if (typeVariable.endsWith("[]")) {
-                        this.typeSet.add(typeVariable.substring(0, typeVariable.length() - 2));
-                    } else {
-                        this.typeSet.add(typeVariable);
-                    }
-                    if (iterator2.hasNext()) {
-                        functions.append("\"},");
-                    } else {
-                        functions.append("\"}");
-                    }
-                }
-                functions.append("],\"returnType\":\"");
-                if (function.returnTypeNode.getKind() == NodeKind.UNION_TYPE_NODE) {
-                    List<BLangType> lst = ((BLangUnionTypeNode) function.returnTypeNode).memberTypeNodes;
-                    for (int i = 0; i < lst.size(); i++) {
-                        String item = lst.get(i).toString();
-                        if (item.equals("error")) {
-                            continue;
-                        } else if (item.equals("error?")) {
-                            continue;
-                        } else if (item.equals("error<>")) {
-                            continue;
-                        } else {
-                            String returnType = lst.get(i).type.toString();
-                            functions.append(returnType);
-                            if (returnType.endsWith("?")) {
-                                this.typeSet.add(returnType.substring(0, returnType.length() - 1));
-                            } else if (returnType.endsWith("[]")) {
-                                this.typeSet.add(returnType.substring(0, returnType.length() - 2));
-                            } else {
-                                this.typeSet.add(returnType);
-                            }
-                            break;
-                        }
-                    }
-                } else {
-                    functions.append(function.returnTypeNode.type.tsymbol);
-                }
-                flag = iterator.hasNext();
-
-                if (flag) {
-                    functions.append("\"}},");
-                } else {
-                    functions.append("\"}}");
-                }
-            }
-        }
-
-        if (functions.length() != 0) {
-            String symbol = String.valueOf(typeDefinition.symbol);
-            String organization = symbol.substring(0, symbol.indexOf("/"));
-            String moduleName = symbol.substring(symbol.indexOf("/") + 1);
-            String versionNumber = null;
-
-            String splitCharacter = ":";
-            if (moduleName.contains(URL_ENCODED_COLON)) {
-                splitCharacter = URL_ENCODED_COLON;
-            }
-
-            if (moduleName.contains(splitCharacter)) {
-                String[] moduleNameSegments = moduleName.split(splitCharacter);
-                moduleName = moduleNameSegments[0];
-                versionNumber = moduleNameSegments[1];
-            }
-
-            String functionsJson = functions.toString();
-
-            if (functionsJson.endsWith(",")) {
-                functionsJson = functionsJson.substring(0, functionsJson.lastIndexOf(","));
-            }
-
-            functionsJson = "{\"" + organization + "/" + moduleName + ":" + versionNumber + "\" : " +
-                    "[" + functionsJson + "]}";
-            functions = new StringBuilder();
-            name = encode(name);
-
-            String functionsFileName = name + "_functions.json";
-            moduleName = moduleName.substring(moduleName.indexOf(".") + 1);
-            Path targetFunctionsFilePath = Paths.get(projectDirectory, "modules", moduleName, "resources",
-                    functionsFileName);
-            Utils.writeToFile(functionsJson, targetFunctionsFilePath);
-        } else {
-            noFunctionsFlag = true;
-        }
-    }
 
     private String getCustomizedErrorMessage(Exception e) {
         String errorMessage = null;
@@ -616,5 +593,21 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
         } catch (UnsupportedEncodingException e) {
             throw new DataMapperException(e);
         }
+    }
+
+    private boolean checkForClient(Package currentPackage, Collection<ModuleId> moduleIds) {
+        for (ModuleId moduleId : moduleIds) {
+            Module module = currentPackage.module(moduleId);
+            SemanticModel semanticModel = module.getCompilation().getSemanticModel();
+            for (Symbol moduleSymbol : semanticModel.moduleSymbols()) {
+                if (moduleSymbol.kind() == SymbolKind.CLASS) {
+                    List<Qualifier> qualifiers = ((BallerinaClassSymbol) moduleSymbol).qualifiers();
+                    if (qualifiers.contains(Qualifier.CLIENT)) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
     }
 }

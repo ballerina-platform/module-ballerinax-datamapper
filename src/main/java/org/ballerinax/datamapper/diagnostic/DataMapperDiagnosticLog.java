@@ -21,171 +21,45 @@ package org.ballerinax.datamapper.diagnostic;
 import io.ballerina.tools.diagnostics.Diagnostic;
 import io.ballerina.tools.diagnostics.DiagnosticCode;
 import io.ballerina.tools.diagnostics.DiagnosticInfo;
-import io.ballerina.tools.diagnostics.DiagnosticSeverity;
 import io.ballerina.tools.diagnostics.Location;
-import org.ballerinalang.model.elements.PackageID;
-import org.ballerinalang.util.diagnostic.DiagnosticLog;
-import org.wso2.ballerinalang.compiler.PackageCache;
-import org.wso2.ballerinalang.compiler.diagnostic.BLangDiagnostic;
-import org.wso2.ballerinalang.compiler.tree.BLangPackage;
-import org.wso2.ballerinalang.compiler.util.CompilerContext;
 
 import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import java.util.ResourceBundle;
 
 /**
  * Diagnostic log for Data Mapper Compiler Extension.
  */
-public class DataMapperDiagnosticLog implements DiagnosticLog {
-    private static final CompilerContext.Key<DataMapperDiagnosticLog> DIAGNOSTIC_LOG_KEY = new CompilerContext.Key();
-    private static final String ERROR_PREFIX = "error";
+public class DataMapperDiagnosticLog {
+
     private static final ResourceBundle MESSAGES = ResourceBundle.getBundle("datamapper", Locale.getDefault());
+    private static final String ERROR_PREFIX = "error";
 
-    private int errorCount = 0;
-    private PackageCache packageCache;
-    private PackageID currentPackageId;
-    private boolean isMute = false;
-
-    private DataMapperDiagnosticLog(CompilerContext context) {
-        context.put(DIAGNOSTIC_LOG_KEY, this);
-        this.packageCache = PackageCache.getInstance(context);
+    public List<Diagnostic> getDataMapperPluginDiagnostic() {
+        return dataMapperPluginDiagnostic;
     }
 
-    public static DataMapperDiagnosticLog getInstance(CompilerContext context) {
-        DataMapperDiagnosticLog dLogger = context.get(DIAGNOSTIC_LOG_KEY);
-        if (dLogger == null) {
-            dLogger = new DataMapperDiagnosticLog(context);
-        }
+    private List<Diagnostic> dataMapperPluginDiagnostic;
 
-        return dLogger;
+    public DataMapperDiagnosticLog() {
+        this.dataMapperPluginDiagnostic = new ArrayList<>();
     }
 
-    public void setCurrentPackageId(PackageID packageID) {
-        this.currentPackageId = packageID;
+    public void addDiagnostics(Location position, DiagnosticErrorCode diagnosticErrorCode, Object... args) {
+        DiagnosticInfo diagnosticInfo = new DiagnosticInfo(
+                diagnosticErrorCode.diagnosticId(), diagnosticErrorCode.messageKey(),
+                diagnosticErrorCode.severity());
+        String msg = formatMessage(ERROR_PREFIX, diagnosticErrorCode, args);
+        DataMapperDiagnostic dataMapperDiagnostic = new DataMapperDiagnostic(position, diagnosticInfo, msg);
+        dataMapperPluginDiagnostic.add(dataMapperDiagnostic);
+        int i = 0;
     }
-
-    /**
-     * Log an error.
-     *
-     * @param location Location of the error in the source code.
-     * @param code Error code
-     * @param args Parameters associated with the error
-     */
-    public void error(Location location, DiagnosticCode code, Object... args) {
-        String msg = formatMessage(ERROR_PREFIX, code, args);
-        reportDiagnostic(code, location, msg, DiagnosticSeverity.ERROR);
-    }
-
-    /**
-     * Get the number of error logged in this logger.
-     *
-     * @return Number of errors logged.
-     */
-    public int errorCount() {
-        return this.errorCount;
-    }
-
-    /**
-     * Set the error count.
-     *
-     * @param errorCount Error count
-     */
-    public void setErrorCount(int errorCount) {
-        this.errorCount = errorCount;
-    }
-
-    /**
-     * Reset error count.
-     */
-    public void resetErrorCount() {
-        this.errorCount = 0;
-    }
-
-    /**
-     * Mute the logger. This will stop reporting the diagnostic.
-     * However it will continue to keep track of the number of errors.
-     */
-    public void mute() {
-        this.isMute = true;
-    }
-
-    /**
-     * Unmute the logger. This will start reporting the diagnostic.
-     */
-    public void unmute() {
-        this.isMute = false;
-    }
-
-    @Override
-    @Deprecated
-    public void logDiagnostic(DiagnosticSeverity severity, Location location, CharSequence message) {
-        reportDiagnostic(null, location, message.toString(), severity);
-    }
-
-    @Override
-    public void logDiagnostic(DiagnosticSeverity severity, PackageID pkgId, Location location, CharSequence message) {
-        reportDiagnostic(pkgId, null, location, message.toString(), severity);
-    }
-
-    /**
-     * Report a diagnostic for a given package.
-     *
-     * @param pkgId Package ID of the diagnostic associated with
-     * @param diagnostic the diagnostic to be logged
-     */
-    public void logDiagnostic(PackageID pkgId, Diagnostic diagnostic) {
-        if (diagnostic.diagnosticInfo().severity() == DiagnosticSeverity.ERROR) {
-            this.errorCount++;
-        }
-
-        storeDiagnosticInModule(pkgId, diagnostic);
-    }
-
-    // private helper methods
 
     private String formatMessage(String prefix, DiagnosticCode code, Object[] args) {
         String msgKey = MESSAGES.getString(prefix + "." + code.messageKey());
         return MessageFormat.format(msgKey, args);
     }
 
-    private void reportDiagnostic(PackageID packageID, DiagnosticCode diagnosticCode, Location location,
-                                  String msg, DiagnosticSeverity severity) {
-        if (severity == DiagnosticSeverity.ERROR) {
-            this.errorCount++;
-        }
-
-        if (this.isMute) {
-            return;
-        }
-
-        // TODO: Add 'code' and 'messageTemplate' to the DiagnosticInfo
-        DiagnosticInfo diagInfo = new DiagnosticInfo(diagnosticCode.diagnosticId(), diagnosticCode.messageKey(),
-                diagnosticCode.severity());
-
-        BLangDiagnostic diagnostic = new BLangDiagnostic(location, msg, diagInfo, diagnosticCode);
-        storeDiagnosticInModule(packageID, diagnostic);
-    }
-
-    private void reportDiagnostic(DiagnosticCode diagnosticCode, Location location, String msg,
-                                  DiagnosticSeverity severity) {
-        if (severity == DiagnosticSeverity.ERROR) {
-            this.errorCount++;
-        }
-
-        if (this.isMute) {
-            return;
-        }
-
-        DiagnosticInfo diagInfo = new DiagnosticInfo(diagnosticCode.diagnosticId(), diagnosticCode.messageKey(),
-                severity);
-
-        BLangDiagnostic diagnostic = new BLangDiagnostic(location, msg, diagInfo, diagnosticCode);
-        storeDiagnosticInModule(currentPackageId, diagnostic);
-    }
-
-    private void storeDiagnosticInModule(PackageID pkgId, Diagnostic diagnostic) {
-        BLangPackage pkgNode = this.packageCache.get(pkgId);
-        pkgNode.addDiagnostic(diagnostic);
-    }
 }
