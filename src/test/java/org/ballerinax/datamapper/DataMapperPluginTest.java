@@ -172,7 +172,7 @@ public class DataMapperPluginTest {
     }
 
     @Test
-    public void testHappyPathSingleSourceFile() {
+    public void testHappyPathDefaultModuleBuildProject() {
         CompileResult result = BCompileUtil.compile("test8/main.bal");
         Assert.assertEquals(result.getErrorCount(), 0);
     }
@@ -269,6 +269,42 @@ public class DataMapperPluginTest {
         File jsonFile = new File("src/test/resources/test15" +
             "/modules/module_test15/resources/%5C+%5C%2F%5C%3A%5C%40%5C%5B%5C%60%5C%7B%5C%7E_Connector_functions.json");
         Assert.assertEquals(jsonFile.exists(), true);
+    }
+
+    @Test
+    public void testHappyPathSingleSourceFile() {
+        CompileResult result = BCompileUtil.compile("test16/main.bal");
+        Assert.assertEquals(result.getErrorCount(), 0);
+    }
+
+    @Test
+    public void testHappyPathWithMultiModuleProject() {
+        CompileResult result = BCompileUtil.compile("test17/modules/module_test17_1");
+        File jsonFile = new File("src/test/resources/test17/modules/module_test17_1/resources/Assignee_schema.json");
+        Assert.assertEquals(jsonFile.exists(), true);
+        jsonFile = new File("src/test/resources/test17/modules/module_test17_1/resources/Client_functions.json");
+        Assert.assertEquals(jsonFile.exists(), true);
+        jsonFile = new File("src/test/resources/test17/modules/module_test17_1/resources/Creator_schema.json");
+        Assert.assertEquals(jsonFile.exists(), true);
+        jsonFile = new File("src/test/resources/test17/modules/module_test17_1/resources/Issue_schema.json");
+        Assert.assertEquals(jsonFile.exists(), true);
+        jsonFile = new File("src/test/resources/test17/modules/module_test17_1/resources/Label_schema.json");
+        Assert.assertEquals(jsonFile.exists(), true);
+        jsonFile = new File("src/test/resources/test17/modules/module_test17_3/resources/Email_schema.json");
+        Assert.assertEquals(jsonFile.exists(), true);
+        Assert.assertEquals(result.getErrorCount(), 0);
+    }
+
+    @Test
+    public void testHappyPathWithMultipleReturnTypes() {
+        CompileResult result = BCompileUtil.compile("test18/modules/module_test18");
+        File jsonFile = new File("src/test/resources/test18/modules/module_test18/resources/Assignee_schema.json");
+        Assert.assertEquals(jsonFile.exists(), true);
+        jsonFile = new File("src/test/resources/test18/modules/module_test18/resources/Client_functions.json");
+        Assert.assertEquals(jsonFile.exists(), true);
+        jsonFile = new File("src/test/resources/test18/modules/module_test18/resources/Creator_schema.json");
+        Assert.assertEquals(jsonFile.exists(), true);
+        Assert.assertEquals(result.getErrorCount(), 0);
     }
 
     public static boolean deleteDirectory(Path directoryPath) {
@@ -432,13 +468,30 @@ public class DataMapperPluginTest {
             path = "src/test/resources/test14/target/";
             deleteDirectory(Path.of(path));
 
-
             path = "src/test/resources/test15/modules/module_test15/resources/";
 
             Files.deleteIfExists(Paths.get(path +
                     "%5C+%5C%2F%5C%3A%5C%40%5C%5B%5C%60%5C%7B%5C%7E_Connector_functions.json"));
 
             path = "src/test/resources/test15/target/";
+            deleteDirectory(Path.of(path));
+
+            path = "src/test/resources/test16/";
+            Files.deleteIfExists(Paths.get(path + "main.jar"));
+
+            path = "src/test/resources/test17/modules/module_test17_1/resources/";
+            deleteDirectory(Path.of(path));
+
+            path = "src/test/resources/test17/modules/module_test17_3/resources/";
+            deleteDirectory(Path.of(path));
+
+            path = "src/test/resources/test17/target/";
+            deleteDirectory(Path.of(path));
+
+            path = "src/test/resources/test18/modules/module_test18/resources/";
+            deleteDirectory(Path.of(path));
+
+            path = "src/test/resources/test18/target/";
             deleteDirectory(Path.of(path));
 
         } catch (IOException e) {
