@@ -22,13 +22,32 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.ballerina.compiler.api.SemanticModel;
 import io.ballerina.compiler.api.impl.symbols.BallerinaClassSymbol;
-import io.ballerina.compiler.api.symbols.*;
-import io.ballerina.compiler.syntax.tree.*;
-import io.ballerina.projects.ModuleCompilation;
+import io.ballerina.compiler.api.symbols.MethodSymbol;
+import io.ballerina.compiler.api.symbols.ParameterSymbol;
+import io.ballerina.compiler.api.symbols.Qualifier;
+import io.ballerina.compiler.api.symbols.RecordFieldSymbol;
+import io.ballerina.compiler.api.symbols.RecordTypeSymbol;
+import io.ballerina.compiler.api.symbols.Symbol;
+import io.ballerina.compiler.api.symbols.TypeDefinitionSymbol;
+import io.ballerina.compiler.api.symbols.TypeDescKind;
+import io.ballerina.compiler.api.symbols.TypeSymbol;
+import io.ballerina.compiler.api.symbols.UnionTypeSymbol;
+import io.ballerina.compiler.syntax.tree.ClassDefinitionNode;
+import io.ballerina.compiler.syntax.tree.NodeList;
+import io.ballerina.compiler.syntax.tree.NodeVisitor;
+import io.ballerina.compiler.syntax.tree.SyntaxKind;
+import io.ballerina.compiler.syntax.tree.Token;
+import io.ballerina.compiler.syntax.tree.TypeDefinitionNode;
 import io.ballerina.projects.Module;
+import io.ballerina.projects.ModuleCompilation;
+import org.ballerinax.datamapper.exceptions.DataMapperException;
 
-
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 /**
  * Visitor to extract Record Type Structure information.
@@ -56,7 +75,7 @@ public class DataMapperNodeVisitor extends NodeVisitor {
         this.model = compilation.getSemanticModel();
     }
 
-    private String getFieldTypes(Map<String, RecordFieldSymbol> fieldSymbolMap){
+    private String getFieldTypes(Map<String, RecordFieldSymbol> fieldSymbolMap) {
         Iterator<String> iterator = fieldSymbolMap.keySet().iterator();
         Map<String, String> fieldSymbols = new HashMap<>();
         String serialized = null;
@@ -68,7 +87,7 @@ public class DataMapperNodeVisitor extends NodeVisitor {
         try {
             serialized = new ObjectMapper().writeValueAsString(fieldSymbols);
         } catch (JsonProcessingException e) {
-            e.printStackTrace();
+            throw new DataMapperException(e);
         }
         return serialized;
     }
@@ -77,14 +96,15 @@ public class DataMapperNodeVisitor extends NodeVisitor {
     public void visit(TypeDefinitionNode typeDefinitionNode) {
         if (typeDefinitionNode.typeDescriptor().kind() == SyntaxKind.RECORD_TYPE_DESC) {
             Optional<Symbol> recordSymbolOpt = this.model.symbol(typeDefinitionNode);
-            if(recordSymbolOpt.isPresent()){
+            if (recordSymbolOpt.isPresent()) {
                 Symbol recordSymbol = recordSymbolOpt.get();
                 Optional<String> recordNameOpt = recordSymbol.getName();
-                if(recordNameOpt.isPresent()){
+                if (recordNameOpt.isPresent()) {
                     String recordName = recordNameOpt.get();
                     String recordSignature = recordSymbol.getModule().get().id().toString();
                     recordName = recordSignature + ":" + recordName;
-                    Map<String, RecordFieldSymbol> fieldSymbolMap = ((RecordTypeSymbol) ((TypeDefinitionSymbol) recordSymbol).typeDescriptor()).fieldDescriptors();
+                    Map<String, RecordFieldSymbol> fieldSymbolMap = ((RecordTypeSymbol) ((TypeDefinitionSymbol)
+                            recordSymbol).typeDescriptor()).fieldDescriptors();
                     String serialized = getFieldTypes(fieldSymbolMap);
                     serialized = "{\"" + recordName + "\":" + serialized + "}";
                     this.recordTypes.put(recordName, serialized);
@@ -130,7 +150,8 @@ public class DataMapperNodeVisitor extends NodeVisitor {
                             TypeSymbol returnTypeSymbol = method.typeDescriptor().returnTypeDescriptor().get();
                             String returnName = null;
                             if (returnTypeSymbol.typeKind() == TypeDescKind.UNION) {
-                                List<TypeSymbol> returnList = ((UnionTypeSymbol) returnTypeSymbol).memberTypeDescriptors();
+                                List<TypeSymbol> returnList = ((UnionTypeSymbol) returnTypeSymbol).
+                                        memberTypeDescriptors();
                                 for (TypeSymbol typeSymbol : returnList) {
                                     if (typeSymbol.typeKind() == TypeDescKind.ERROR) {
                                         continue;
@@ -156,11 +177,11 @@ public class DataMapperNodeVisitor extends NodeVisitor {
     }
 }
 
-class FunctionRecord{
+class FunctionRecord {
     private HashMap<String, String> parameters;
     private String returnType;
 
-    public FunctionRecord(){
+    public FunctionRecord() {
         parameters = new HashMap<>();
         returnType = "";
     }
@@ -169,7 +190,7 @@ class FunctionRecord{
         return parameters;
     }
 
-    public void addParameter(String name, String type){
+    public void addParameter(String name, String type) {
         this.parameters.put(name, type);
     }
 
