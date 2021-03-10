@@ -145,13 +145,18 @@ public class DataMapperNodeVisitor extends NodeVisitor {
                                         if (typeSymbol.typeKind() == TypeDescKind.ERROR) {
                                             continue;
                                         } else {
-                                            paraType.add(typeSymbol.signature());
+                                            if (!typeSymbol.signature().equals("()")) {
+                                                paraType.add(typeSymbol.signature());
+                                            }
                                         }
                                     }
                                 } else {
-                                    paraType.add(parameter.typeDescriptor().signature());
+                                    if (!parameter.typeDescriptor().signature().equals("()")) {
+                                        paraType.add(parameter.typeDescriptor().signature());
+                                    }
                                 }
                                 functionRecord.addParameter(parameterName, paraType);
+                                paraType = new ArrayList<>();
                             }
                         }
                         TypeSymbol returnTypeSymbol = method.typeDescriptor().returnTypeDescriptor().get();
