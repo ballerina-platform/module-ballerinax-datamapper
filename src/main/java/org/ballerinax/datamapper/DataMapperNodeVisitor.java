@@ -142,18 +142,15 @@ public class DataMapperNodeVisitor extends NodeVisitor {
                                     List<TypeSymbol> paraList = ((UnionTypeSymbol) parameter.typeDescriptor()).
                                             memberTypeDescriptors();
                                     for (TypeSymbol typeSymbol : paraList) {
-                                        if (typeSymbol.typeKind() == TypeDescKind.ERROR) {
+                                        if (typeSymbol.typeKind() == TypeDescKind.ERROR ||
+                                                typeSymbol.typeKind() == TypeDescKind.NIL) {
                                             continue;
                                         } else {
-                                            if (!typeSymbol.signature().equals("()")) {
-                                                paraType.add(typeSymbol.signature());
-                                            }
+                                            paraType.add(typeSymbol.signature());
                                         }
                                     }
                                 } else {
-                                    if (!parameter.typeDescriptor().signature().equals("()")) {
-                                        paraType.add(parameter.typeDescriptor().signature());
-                                    }
+                                    paraType.add(parameter.typeDescriptor().signature());
                                 }
                                 functionRecord.addParameter(parameterName, paraType);
                                 paraType = new ArrayList<>();
