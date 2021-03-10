@@ -129,50 +129,46 @@ public class DataMapperNodeVisitor extends NodeVisitor {
                     Collection<MethodSymbol> methods = ((BallerinaClassSymbol) classSymbol).methods().values();
                     Map<String, FunctionRecord> functionMap = new HashMap<>();
                     for (MethodSymbol method : methods) {
-                        boolean checkForRemote = false;
-                        if (method.qualifiers().contains(Qualifier.REMOTE)) {
-                            checkForRemote = true;
+                        if (!method.qualifiers().contains(Qualifier.REMOTE)) {
+                            continue;
                         }
-                        if (checkForRemote) {
-                            String functionName = method.getName().get();
-                            List<String> paraType = new ArrayList<>();
-                            FunctionRecord functionRecord = new FunctionRecord();
-                            for (ParameterSymbol parameter : method.typeDescriptor().parameters()) {
-                                if (parameter.getName().isPresent()) {
-                                    String parameterName = parameter.getName().get();
-                                    if (parameter.typeDescriptor().typeKind() == TypeDescKind.UNION) {
-                                        List<TypeSymbol> paraList = ((UnionTypeSymbol) parameter.typeDescriptor()).
-                                                memberTypeDescriptors();
-                                        for (TypeSymbol typeSymbol : paraList) {
-                                            if (typeSymbol.typeKind() == TypeDescKind.ERROR) {
-                                                continue;
-                                            } else {
-                                                paraType.add(typeSymbol.signature());
-                                            }
+                        String functionName = method.getName().get();
+                        List<String> paraType = new ArrayList<>();
+                        FunctionRecord functionRecord = new FunctionRecord();
+                        for (ParameterSymbol parameter : method.typeDescriptor().parameters()) {
+                            if (parameter.getName().isPresent()) {
+                                String parameterName = parameter.getName().get();
+                                if (parameter.typeDescriptor().typeKind() == TypeDescKind.UNION) {
+                                    List<TypeSymbol> paraList = ((UnionTypeSymbol) parameter.typeDescriptor()).
+                                            memberTypeDescriptors();
+                                    for (TypeSymbol typeSymbol : paraList) {
+                                        if (typeSymbol.typeKind() == TypeDescKind.ERROR) {
+                                            continue;
+                                        } else {
+                                            paraType.add(typeSymbol.signature());
                                         }
-                                    } else {
-                                        paraType.add(parameter.typeDescriptor().signature());
                                     }
-                                    functionRecord.addParameter(parameterName, paraType);
+                                } else {
+                                    paraType.add(parameter.typeDescriptor().signature());
                                 }
+                                functionRecord.addParameter(parameterName, paraType);
                             }
-                            TypeSymbol returnTypeSymbol = method.typeDescriptor().returnTypeDescriptor().get();
-                            if (returnTypeSymbol.typeKind() == TypeDescKind.UNION) {
-                                List<TypeSymbol> returnList = ((UnionTypeSymbol) returnTypeSymbol).
-                                        memberTypeDescriptors();
-                                for (TypeSymbol typeSymbol : returnList) {
-                                    if (typeSymbol.typeKind() == TypeDescKind.ERROR) {
-                                        continue;
-                                    } else {
-                                        functionRecord.addReturnType(typeSymbol.signature());
-                                    }
-                                }
-                            } else {
-                                functionRecord.addReturnType(returnTypeSymbol.signature());
-                            }
-                            functionMap.put(functionName, functionRecord);
-                            checkForRemote = false;
                         }
+                        TypeSymbol returnTypeSymbol = method.typeDescriptor().returnTypeDescriptor().get();
+                        if (returnTypeSymbol.typeKind() == TypeDescKind.UNION) {
+                            List<TypeSymbol> returnList = ((UnionTypeSymbol) returnTypeSymbol).
+                                    memberTypeDescriptors();
+                            for (TypeSymbol typeSymbol : returnList) {
+                                if (typeSymbol.typeKind() == TypeDescKind.ERROR) {
+                                    continue;
+                                } else {
+                                    functionRecord.addReturnType(typeSymbol.signature());
+                                }
+                            }
+                        } else {
+                            functionRecord.addReturnType(returnTypeSymbol.signature());
+                        }
+                        functionMap.put(functionName, functionRecord);
                     }
                     if (!functionMap.isEmpty()) {
                         this.clientMap.put(clientName, functionMap);
