@@ -31,6 +31,7 @@ import org.testng.annotations.Test;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 
 /**
@@ -270,6 +271,22 @@ public class DataMapperPluginTest {
         Assert.assertEquals(jsonFile.exists(), true);
     }
 
+    public static boolean deleteDirectory(Path directoryPath) {
+        File directory = new File(String.valueOf(directoryPath));
+        if (directory.isDirectory()) {
+            File[] files = directory.listFiles();
+            if (files != null) {
+                for (File f : files) {
+                    boolean success = deleteDirectory(f.toPath());
+                    if (!success) {
+                        return false;
+                    }
+                }
+            }
+        }
+        return directory.delete();
+    }
+
     @AfterClass
     public void tearDown() throws IOException {
         //Cleanup the test projects if they already have generated json files
@@ -282,27 +299,7 @@ public class DataMapperPluginTest {
             Files.deleteIfExists(Paths.get(path + "Label_schema.json"));
 
             path = "src/test/resources/test1/target/";
-
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test1/0.1.0/bir/test1.bir"));
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test1/0.1.0/bir/test1.module_test1.bir"));
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test1/0.1.0/java11/test1.jar"));
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test1/0.1.0/java11/test1.module_test1.jar"));
-
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test1/0.1.0/bir"));
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test1/0.1.0/java11"));
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test1/0.1.0"));
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test1"));
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax"));
-            Files.deleteIfExists(Paths.get(path + "cache/tests_cache"));
-            Files.deleteIfExists(Paths.get(path + "cache"));
-
-            Files.deleteIfExists(Paths.get(path + "bala/ballerinax-test1-any-0.1.0.bala"));
-            Files.deleteIfExists(Paths.get(path + "bala"));
-
-            Files.deleteIfExists(Paths.get(path + "bin/test1.jar"));
-            Files.deleteIfExists(Paths.get(path + "bin"));
-
-            Files.deleteIfExists(Paths.get(path));
+            deleteDirectory(Path.of(path));
 
             path = "src/test/resources/test2/modules/module_test2/resources/";
 
@@ -314,19 +311,7 @@ public class DataMapperPluginTest {
             Files.deleteIfExists(Paths.get(path + "Client_functions.json"));
 
             path = "src/test/resources/test2/target/";
-
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test2/0.1.0/bir/test2.bir"));
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test2/0.1.0/bir/test2.module_test2.bir"));
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test2/0.1.0/java11/test2.jar"));
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test2/0.1.0/java11/test2.module_test2.jar"));
-
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test2/0.1.0/bir"));
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test2/0.1.0/java11"));
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test2/0.1.0"));
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test2"));
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax"));
-            Files.deleteIfExists(Paths.get(path + "cache"));
-            Files.deleteIfExists(Paths.get(path));
+            deleteDirectory(Path.of(path));
 
             path = "src/test/resources/test3/modules/module_test3/resources/";
 
@@ -338,19 +323,7 @@ public class DataMapperPluginTest {
             Files.deleteIfExists(Paths.get(path + "Client_functions.json"));
 
             path = "src/test/resources/test3/target/";
-
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test3/0.1.0/bir/test3.bir"));
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test3/0.1.0/bir/test3.module_test3.bir"));
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test3/0.1.0/java11/test3.jar"));
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test3/0.1.0/java11/test3.module_test3.jar"));
-
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test3/0.1.0/bir"));
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test3/0.1.0/java11"));
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test3/0.1.0"));
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test3"));
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax"));
-            Files.deleteIfExists(Paths.get(path + "cache"));
-            Files.deleteIfExists(Paths.get(path));
+            deleteDirectory(Path.of(path));
 
             path = "src/test/resources/test4/modules/module_test4/resources/";
 
@@ -362,19 +335,7 @@ public class DataMapperPluginTest {
             Files.deleteIfExists(Paths.get(path + "Client_functions.json"));
 
             path = "src/test/resources/test4/target/";
-
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test4/0.1.0/bir/test4.bir"));
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test4/0.1.0/bir/test4.module_test4.bir"));
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test4/0.1.0/java11/test4.jar"));
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test4/0.1.0/java11/test4.module_test4.jar"));
-
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test4/0.1.0/bir"));
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test4/0.1.0/java11"));
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test4/0.1.0"));
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test4"));
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax"));
-            Files.deleteIfExists(Paths.get(path + "cache"));
-            Files.deleteIfExists(Paths.get(path));
+            deleteDirectory(Path.of(path));
 
             path = "src/test/resources/test5/modules/module_test5/resources/";
 
@@ -385,27 +346,7 @@ public class DataMapperPluginTest {
             Files.deleteIfExists(Paths.get(path + "Client_functions.json"));
 
             path = "src/test/resources/test5/target/";
-
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test5/0.1.0/bir/test5.bir"));
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test5/0.1.0/bir/test5.module_test5.bir"));
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test5/0.1.0/java11/test5.jar"));
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test5/0.1.0/java11/test5.module_test5.jar"));
-
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test5/0.1.0/bir"));
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test5/0.1.0/java11"));
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test5/0.1.0"));
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test5"));
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax"));
-            Files.deleteIfExists(Paths.get(path + "cache/tests_cache"));
-            Files.deleteIfExists(Paths.get(path + "cache"));
-
-            Files.deleteIfExists(Paths.get(path + "bala/ballerinax-test5-any-0.1.0.bala"));
-            Files.deleteIfExists(Paths.get(path + "bala"));
-
-            Files.deleteIfExists(Paths.get(path + "bin/test5.jar"));
-            Files.deleteIfExists(Paths.get(path + "bin"));
-
-            Files.deleteIfExists(Paths.get(path));
+            deleteDirectory(Path.of(path));
 
             path = "src/test/resources/test6/modules/module_test6/resources/";
 
@@ -416,19 +357,7 @@ public class DataMapperPluginTest {
             Files.deleteIfExists(Paths.get(path + "Client_functions.json"));
 
             path = "src/test/resources/test6/target/";
-
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test6/0.1.0/bir/test6.bir"));
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test6/0.1.0/bir/test6.module_test6.bir"));
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test6/0.1.0/java11/test6.jar"));
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test6/0.1.0/java11/test6.module_test6.jar"));
-
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test6/0.1.0/bir"));
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test6/0.1.0/java11"));
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test6/0.1.0"));
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test6"));
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax"));
-            Files.deleteIfExists(Paths.get(path + "cache"));
-            Files.deleteIfExists(Paths.get(path));
+            deleteDirectory(Path.of(path));
 
             path = "src/test/resources/test7/modules/module_test7/resources/";
 
@@ -439,48 +368,11 @@ public class DataMapperPluginTest {
             Files.deleteIfExists(Paths.get(path + "Client_functions.json"));
 
             path = "src/test/resources/test7/target/";
+            deleteDirectory(Path.of(path));
 
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test7/0.1.0/bir/test7.bir"));
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test7/0.1.0/bir/test7.module_test7.bir"));
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test7/0.1.0/java11/test7.jar"));
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test7/0.1.0/java11/test7.module_test7.jar"));
-
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test7/0.1.0/bir"));
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test7/0.1.0/java11"));
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test7/0.1.0"));
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test7"));
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax"));
-            Files.deleteIfExists(Paths.get(path + "cache/tests_cache"));
-            Files.deleteIfExists(Paths.get(path + "cache"));
-
-            Files.deleteIfExists(Paths.get(path + "bala/ballerinax-test7-any-0.1.0.bala"));
-            Files.deleteIfExists(Paths.get(path + "bala"));
-
-            Files.deleteIfExists(Paths.get(path + "bin/test7.jar"));
-            Files.deleteIfExists(Paths.get(path + "bin"));
-
-            Files.deleteIfExists(Paths.get(path));
 
             path = "src/test/resources/test8/target/";
-
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test8/0.1.0/bir/test8.bir"));
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test8/0.1.0/java11/test8.jar"));
-
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test8/0.1.0/bir"));
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test8/0.1.0/java11"));
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test8/0.1.0"));
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test8"));
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax"));
-            Files.deleteIfExists(Paths.get(path + "cache/tests_cache"));
-            Files.deleteIfExists(Paths.get(path + "cache"));
-
-            Files.deleteIfExists(Paths.get(path + "bala/ballerinax-test8-any-0.1.0.bala"));
-            Files.deleteIfExists(Paths.get(path + "bala"));
-
-            Files.deleteIfExists(Paths.get(path + "bin/test8.jar"));
-            Files.deleteIfExists(Paths.get(path + "bin"));
-
-            Files.deleteIfExists(Paths.get(path));
+            deleteDirectory(Path.of(path));
 
             path = "src/test/resources/test9/modules/module_test9/resources/";
 
@@ -491,27 +383,7 @@ public class DataMapperPluginTest {
             Files.deleteIfExists(Paths.get(path + "Client_functions.json"));
 
             path = "src/test/resources/test9/target/";
-
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test9/0.1.0/bir/test9.bir"));
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test9/0.1.0/bir/test9.module_test9.bir"));
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test9/0.1.0/java11/test9.jar"));
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test9/0.1.0/java11/test9.module_test9.jar"));
-
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test9/0.1.0/bir"));
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test9/0.1.0/java11"));
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test9/0.1.0"));
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test9"));
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax"));
-            Files.deleteIfExists(Paths.get(path + "cache/tests_cache"));
-            Files.deleteIfExists(Paths.get(path + "cache"));
-
-            Files.deleteIfExists(Paths.get(path + "bala/ballerinax-test9-any-0.1.0.bala"));
-            Files.deleteIfExists(Paths.get(path + "bala"));
-
-            Files.deleteIfExists(Paths.get(path + "bin/test9.jar"));
-            Files.deleteIfExists(Paths.get(path + "bin"));
-
-            Files.deleteIfExists(Paths.get(path));
+            deleteDirectory(Path.of(path));
 
             path = "src/test/resources/test10/modules/module_test10/resources/";
 
@@ -523,27 +395,7 @@ public class DataMapperPluginTest {
             Files.deleteIfExists(Paths.get(path + "Client_functions.json"));
 
             path = "src/test/resources/test10/target/";
-
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test10/0.1.0/bir/test10.bir"));
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test10/0.1.0/bir/test10.module_test10.bir"));
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test10/0.1.0/java11/test10.jar"));
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test10/0.1.0/java11/test10.module_test10.jar"));
-
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test10/0.1.0/bir"));
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test10/0.1.0/java11"));
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test10/0.1.0"));
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test10"));
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax"));
-            Files.deleteIfExists(Paths.get(path + "cache/tests_cache"));
-            Files.deleteIfExists(Paths.get(path + "cache"));
-
-            Files.deleteIfExists(Paths.get(path + "bala/ballerinax-test10-any-0.1.0.bala"));
-            Files.deleteIfExists(Paths.get(path + "bala"));
-
-            Files.deleteIfExists(Paths.get(path + "bin/test10.jar"));
-            Files.deleteIfExists(Paths.get(path + "bin"));
-
-            Files.deleteIfExists(Paths.get(path));
+            deleteDirectory(Path.of(path));
 
             path = "src/test/resources/test11/modules/module_test11/resources/";
 
@@ -554,76 +406,19 @@ public class DataMapperPluginTest {
             Files.deleteIfExists(Paths.get(path + "Client_functions.json"));
 
             path = "src/test/resources/test11/target/";
-
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test11/0.1.0/bir/test11.bir"));
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test11/0.1.0/bir/test11.module_test11.bir"));
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test11/0.1.0/java11/test11.jar"));
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test11/0.1.0/java11/test11.module_test11.jar"));
-
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test11/0.1.0/bir"));
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test11/0.1.0/java11"));
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test11/0.1.0"));
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test11"));
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax"));
-            Files.deleteIfExists(Paths.get(path + "cache/tests_cache"));
-            Files.deleteIfExists(Paths.get(path + "cache"));
-
-            Files.deleteIfExists(Paths.get(path + "bala/ballerinax-test11-any-0.1.0.bala"));
-            Files.deleteIfExists(Paths.get(path + "bala"));
-
-            Files.deleteIfExists(Paths.get(path + "bin/test11.jar"));
-            Files.deleteIfExists(Paths.get(path + "bin"));
-            Files.deleteIfExists(Paths.get(path));
+            deleteDirectory(Path.of(path));
 
             Files.deleteIfExists(Paths.get("src/test/resources/test12/modules/module_test12/resources/" +
                     "Client_functions.json"));
 
             path = "src/test/resources/test12/target/";
-
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test12/0.1.0/bir/test12.bir"));
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test12/0.1.0/bir/test12.module_test12.bir"));
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test12/0.1.0/java11/test12.jar"));
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test12/0.1.0/java11/test12.module_test12.jar"));
-
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test12/0.1.0/bir"));
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test12/0.1.0/java11"));
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test12/0.1.0"));
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test12"));
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax"));
-            Files.deleteIfExists(Paths.get(path + "cache/tests_cache"));
-            Files.deleteIfExists(Paths.get(path + "cache"));
-
-            Files.deleteIfExists(Paths.get(path + "bala/ballerinax-test12-any-0.1.0.bala"));
-            Files.deleteIfExists(Paths.get(path + "bala"));
-
-            Files.deleteIfExists(Paths.get(path + "bin/test12.jar"));
-            Files.deleteIfExists(Paths.get(path + "bin"));
-            Files.deleteIfExists(Paths.get(path));
+            deleteDirectory(Path.of(path));
 
             Files.deleteIfExists(Paths.get("src/test/resources/test13/modules/module_test13/resources/" +
                     "Client_functions.json"));
 
             path = "src/test/resources/test13/target/";
-
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test13/0.1.0/bir/test13.bir"));
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test13/0.1.0/bir/test13.module_test13.bir"));
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test13/0.1.0/java11/test13.jar"));
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test13/0.1.0/java11/test13.module_test13.jar"));
-
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test13/0.1.0/bir"));
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test13/0.1.0/java11"));
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test13/0.1.0"));
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test13"));
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax"));
-            Files.deleteIfExists(Paths.get(path + "cache/tests_cache"));
-            Files.deleteIfExists(Paths.get(path + "cache"));
-
-            Files.deleteIfExists(Paths.get(path + "bala/ballerinax-test13-any-0.1.0.bala"));
-            Files.deleteIfExists(Paths.get(path + "bala"));
-
-            Files.deleteIfExists(Paths.get(path + "bin/test13.jar"));
-            Files.deleteIfExists(Paths.get(path + "bin"));
-            Files.deleteIfExists(Paths.get(path));
+            deleteDirectory(Path.of(path));
 
             path = "src/test/resources/test14/modules/module_test14/resources/";
 
@@ -635,26 +430,8 @@ public class DataMapperPluginTest {
             Files.deleteIfExists(Paths.get(path + "Client2_functions.json"));
 
             path = "src/test/resources/test14/target/";
+            deleteDirectory(Path.of(path));
 
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test14/0.1.0/bir/test14.bir"));
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test14/0.1.0/bir/test14.module_test14.bir"));
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test14/0.1.0/java11/test14.jar"));
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test14/0.1.0/java11/test14.module_test14.jar"));
-
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test14/0.1.0/bir"));
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test14/0.1.0/java11"));
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test14/0.1.0"));
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test14"));
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax"));
-            Files.deleteIfExists(Paths.get(path + "cache/tests_cache"));
-            Files.deleteIfExists(Paths.get(path + "cache"));
-
-            Files.deleteIfExists(Paths.get(path + "bala/ballerinax-test14-any-0.1.0.bala"));
-            Files.deleteIfExists(Paths.get(path + "bala"));
-
-            Files.deleteIfExists(Paths.get(path + "bin/test14.jar"));
-            Files.deleteIfExists(Paths.get(path + "bin"));
-            Files.deleteIfExists(Paths.get(path));
 
             path = "src/test/resources/test15/modules/module_test15/resources/";
 
@@ -662,26 +439,7 @@ public class DataMapperPluginTest {
                     "%5C+%5C%2F%5C%3A%5C%40%5C%5B%5C%60%5C%7B%5C%7E_Connector_functions.json"));
 
             path = "src/test/resources/test15/target/";
-
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test15/0.1.0/bir/test15.bir"));
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test15/0.1.0/bir/test15.module_test15.bir"));
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test15/0.1.0/java11/test15.jar"));
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test15/0.1.0/java11/test15.module_test15.jar"));
-
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test15/0.1.0/bir"));
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test15/0.1.0/java11"));
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test15/0.1.0"));
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax/test15"));
-            Files.deleteIfExists(Paths.get(path + "cache/ballerinax"));
-            Files.deleteIfExists(Paths.get(path + "cache/tests_cache"));
-            Files.deleteIfExists(Paths.get(path + "cache"));
-
-            Files.deleteIfExists(Paths.get(path + "bala/ballerinax-test15-any-0.1.0.bala"));
-            Files.deleteIfExists(Paths.get(path + "bala"));
-
-            Files.deleteIfExists(Paths.get(path + "bin/test15.jar"));
-            Files.deleteIfExists(Paths.get(path + "bin"));
-            Files.deleteIfExists(Paths.get(path));
+            deleteDirectory(Path.of(path));
 
         } catch (IOException e) {
             Reporter.log("Error : " + e.getMessage(), true);
