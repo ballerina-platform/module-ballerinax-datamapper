@@ -54,6 +54,7 @@ import java.io.Reader;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -181,23 +182,30 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
                                 }
                             }
                         }
-                        functions.append("],\"returnType\":\"");
-                        String returnType = function.getValue().getReturnType();
-                        functions.append(returnType);
-                        if (returnType.endsWith("?")) {
-                            this.typeSet.add(returnType.substring(0, returnType.length() - 1));
-                        } else if (returnType.endsWith("[]")) {
-                            this.typeSet.add(returnType.substring(0, returnType.length() - 2));
-                        } else {
-                            this.typeSet.add(returnType);
+                        functions.append("],\"returnType\":[\"");
+                        List<String> returnTypes = function.getValue().getReturnTypes();
+                        for (Iterator<String> iter = returnTypes.iterator(); iter.hasNext(); ) {
+                            String returnType = iter.next();
+                            functions.append(returnType);
+                            if (returnType.endsWith("?")) {
+                                this.typeSet.add(returnType.substring(0, returnType.length() - 1));
+                            } else if (returnType.endsWith("[]")) {
+                                this.typeSet.add(returnType.substring(0, returnType.length() - 2));
+                            } else {
+                                this.typeSet.add(returnType);
+                            }
+                            if (iter.hasNext()) {
+                                functions.append("\", \"");
+                            }
                         }
+                        functions.append("\"]");
 
                         flag = iterator.hasNext();
 
                         if (flag) {
-                            functions.append("\"}},");
+                            functions.append("}},");
                         } else {
-                            functions.append("\"}}");
+                            functions.append("}}");
                         }
                     }
                 }
@@ -354,8 +362,10 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
                 sb.append("]}");
                 Utils.writeToFile(sb.toString(), targetStructureFilePath);
             }
+        } catch (NoSuchFileException e) {
+            // safe to ignore
         } catch (IOException e) {
-//            throw new DataMapperException(e);
+            throw new DataMapperException(e);
         }
     }
 
@@ -585,10 +595,8 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
             for (Symbol moduleSymbol : semanticModel.moduleSymbols()) {
                 if (moduleSymbol.kind() == SymbolKind.CLASS) {
                     List<Qualifier> qualifiers = ((BallerinaClassSymbol) moduleSymbol).qualifiers();
-                    for (Qualifier qualifier : qualifiers) {
-                        if (qualifier.getValue().equals("client")) {
-                            return true;
-                        }
+                    if (qualifiers.contains(Qualifier.CLIENT)) {
+                        return true;
                     }
                 }
             }

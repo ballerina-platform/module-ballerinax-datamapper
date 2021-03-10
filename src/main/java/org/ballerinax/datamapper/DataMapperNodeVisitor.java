@@ -118,26 +118,21 @@ public class DataMapperNodeVisitor extends NodeVisitor {
         NodeList<Token> classTypeQualifiers = classDefinitionNode.classTypeQualifiers();
         for (Token classTypeQualifier : classTypeQualifiers) {
             if (classTypeQualifier.text().equals("client")) {
-                if (model.symbol(classDefinitionNode).isPresent()) {
-                    Symbol symbol = model.symbol(classDefinitionNode).get();
-                    if (symbol.getName().isEmpty()) {
+                Optional<Symbol> classSymbolOpt = model.symbol(classDefinitionNode);
+                if (classSymbolOpt.isPresent()) {
+                    Symbol classSymbol = classSymbolOpt.get();
+                    if (classSymbol.getName().isEmpty()) {
                         continue;
                     }
-                    String clientName = symbol.getName().get();
-                    Collection<MethodSymbol> methods = ((BallerinaClassSymbol) symbol).methods().values();
+                    String clientName = classSymbol.getName().get();
+                    Collection<MethodSymbol> methods = ((BallerinaClassSymbol) classSymbol).methods().values();
                     Map<String, FunctionRecord> functionMap = new HashMap<>();
                     for (MethodSymbol method : methods) {
                         boolean checkForRemote = false;
-                        for (Qualifier qualifier : method.qualifiers()) {
-                            if (qualifier == Qualifier.REMOTE) {
-                                checkForRemote = true;
-                                break;
-                            }
+                        if (method.qualifiers().contains(Qualifier.REMOTE)) {
+                            checkForRemote = true;
                         }
                         if (checkForRemote) {
-                            if (method.getName().isEmpty()) {
-                                continue;
-                            }
                             String functionName = method.getName().get();
                             FunctionRecord functionRecord = new FunctionRecord();
                             for (ParameterSymbol parameter : method.typeDescriptor().parameters()) {
@@ -148,7 +143,6 @@ public class DataMapperNodeVisitor extends NodeVisitor {
                                 }
                             }
                             TypeSymbol returnTypeSymbol = method.typeDescriptor().returnTypeDescriptor().get();
-                            String returnName = null;
                             if (returnTypeSymbol.typeKind() == TypeDescKind.UNION) {
                                 List<TypeSymbol> returnList = ((UnionTypeSymbol) returnTypeSymbol).
                                         memberTypeDescriptors();
@@ -156,14 +150,12 @@ public class DataMapperNodeVisitor extends NodeVisitor {
                                     if (typeSymbol.typeKind() == TypeDescKind.ERROR) {
                                         continue;
                                     } else {
-                                        returnName = typeSymbol.signature();
-                                        break;
+                                        functionRecord.addReturnType(typeSymbol.signature());
                                     }
                                 }
                             } else {
-                                returnName = returnTypeSymbol.signature();
+                                functionRecord.addReturnType(returnTypeSymbol.signature());
                             }
-                            functionRecord.setReturnType(returnName);
                             functionMap.put(functionName, functionRecord);
                             checkForRemote = false;
                         }
@@ -174,35 +166,5 @@ public class DataMapperNodeVisitor extends NodeVisitor {
                 }
             }
         }
-    }
-}
-
-class FunctionRecord {
-    private HashMap<String, String> parameters;
-    private String returnType;
-
-    public FunctionRecord() {
-        parameters = new HashMap<>();
-        returnType = "";
-    }
-
-    public HashMap<String, String> getParameters() {
-        return parameters;
-    }
-
-    public void addParameter(String name, String type) {
-        this.parameters.put(name, type);
-    }
-
-    public void setParameters(HashMap<String, String> parameters) {
-        this.parameters = parameters;
-    }
-
-    public String getReturnType() {
-        return returnType;
-    }
-
-    public void setReturnType(String returnType) {
-        this.returnType = returnType;
     }
 }
