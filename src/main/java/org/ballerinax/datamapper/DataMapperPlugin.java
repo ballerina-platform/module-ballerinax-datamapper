@@ -18,7 +18,6 @@
 
 package org.ballerinax.datamapper;
 
-import io.ballerina.compiler.api.SemanticModel;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonLocation;
 import com.fasterxml.jackson.core.JsonParser;
@@ -26,22 +25,26 @@ import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import io.ballerina.compiler.api.SemanticModel;
 import io.ballerina.compiler.api.impl.symbols.BallerinaClassSymbol;
-import io.ballerina.compiler.api.symbols.*;
-import io.ballerina.projects.*;
+import io.ballerina.compiler.api.symbols.Qualifier;
+import io.ballerina.compiler.api.symbols.Symbol;
+import io.ballerina.compiler.api.symbols.SymbolKind;
 import io.ballerina.compiler.syntax.tree.SyntaxTree;
+import io.ballerina.projects.DocumentId;
 import io.ballerina.projects.Module;
+import io.ballerina.projects.ModuleId;
 import io.ballerina.projects.Package;
-import io.ballerina.projects.internal.model.Target;
+import io.ballerina.projects.Project;
 import io.ballerina.tools.diagnostics.Diagnostic;
 import io.ballerina.tools.diagnostics.Location;
-import org.ballerinalang.model.elements.PackageID;
 import org.ballerinalang.compiler.plugins.AbstractCompilerPlugin;
 import org.ballerinalang.util.diagnostic.DiagnosticLog;
-//import org.ballerinax.datamapper.diagnostic.DataMapperDiagnosticLog;
+import org.ballerinax.datamapper.diagnostic.DataMapperDiagnosticLog;
+import org.ballerinax.datamapper.diagnostic.DiagnosticErrorCode;
 import org.ballerinax.datamapper.exceptions.DataMapperException;
 import org.ballerinax.datamapper.util.Utils;
-//import org.wso2.ballerinalang.compiler.diagnostic.BLangDiagnosticLocation;
+import org.wso2.ballerinalang.compiler.diagnostic.BLangDiagnosticLocation;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -53,7 +56,16 @@ import java.net.URLEncoder;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.Stack;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -62,7 +74,7 @@ import java.util.stream.Stream;
  */
 public class DataMapperPlugin extends AbstractCompilerPlugin {
     public static final String URL_ENCODED_COLON = "%3A";
-    private DiagnosticLog dlog;
+    private DataMapperDiagnosticLog dataMapperLog;
     private HashMap<String, ArrayList<JsonNode>> sampleDataMap;
     private HashMap<String, String> typeInformationMap;
     private HashSet<String> typeSet;
@@ -74,9 +86,9 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
     private JsonParser parser;
     private String currentTypeStructure;
     private String projectDirectory;
+    private DiagnosticLog dlog;
 
     public DataMapperPlugin() {
-//        this.dlog = new DataMapperDiagnosticLog();
         this.sampleDataMap = new HashMap<String, ArrayList<JsonNode>>();
         this.typeSet = new HashSet<String>();
         this.functions = new StringBuilder();
@@ -91,6 +103,7 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
 
     @Override
     public List<Diagnostic> codeAnalyze(Project project) {
+        this.dataMapperLog = new DataMapperDiagnosticLog();
         projectDirectory = project.sourceRoot().toString();
         Package currentPackage = project.currentPackage();
         Collection<ModuleId> moduleIds = currentPackage.moduleIds();
@@ -121,11 +134,16 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
             }
         }
         pluginExecutionCompleted();
-        return Collections.emptyList();
+
+        if (this.dataMapperLog.getDataMapperPluginDiagnostic().isEmpty()) {
+            return Collections.emptyList();
+        } else {
+            return this.dataMapperLog.getDataMapperPluginDiagnostic();
+        }
     }
 
-
-    private void writeFunctionJson(HashMap<String, Map<String, FunctionRecord>> clientMap, String organization, String moduleName, String versionNumber) throws IOException {
+    private void writeFunctionJson(HashMap<String, Map<String, FunctionRecord>> clientMap, String organization,
+                                   String moduleName, String versionNumber) throws IOException {
         if (!clientMap.isEmpty()) {
             for (Map.Entry<String, Map<String, FunctionRecord>> client : clientMap.entrySet()) {
                 String clientName = client.getKey();
@@ -138,7 +156,8 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
                         Map.Entry<String, FunctionRecord> function = iterator.next();
                         String functionName = function.getKey();
                         HashMap<String, String> parameters = function.getValue().getParameters();
-                        functions.append("{\"function\":{\"name\":\"" + encode(functionName) + "\",\"requiredParams\":[");
+                        functions.append("{\"function\":{\"name\":\"" + encode(functionName) +
+                                "\",\"requiredParams\":[");
                         if (!parameters.isEmpty()) {
                             Iterator<String> iterator1 = function.getValue().getParameters().keySet().iterator();
                             while (iterator1.hasNext()) {
@@ -190,14 +209,14 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
                         functionsJson = functionsJson.substring(0, functionsJson.lastIndexOf(","));
                     }
 
-                    functionsJson = "{\"" + encode(organization) + "/" + encode(moduleName) + ":" + versionNumber + "\" : " +
-                            "[" + functionsJson + "]}";
+                    functionsJson = "{\"" + encode(organization) + "/" + encode(moduleName) + ":" + versionNumber +
+                            "\" : " + "[" + functionsJson + "]}";
                     functions = new StringBuilder();
 
                     String functionsFileName = encode(clientName) + "_functions.json";
                     moduleName = moduleName.substring(moduleName.indexOf(".") + 1);
-                    Path targetFunctionsFilePath = Paths.get(projectDirectory, "modules", moduleName, "resources",
-                            functionsFileName);
+                    Path targetFunctionsFilePath = Paths.get(projectDirectory, "modules",
+                            moduleName, "resources", functionsFileName);
                     Utils.writeToFile(functionsJson, targetFunctionsFilePath);
                 } else {
                     noFunctionsFlag = true;
@@ -300,12 +319,11 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
                     readDataArray(path);
                 } catch (IOException e) {
                     JsonLocation location = parser.getCurrentLocation();
-//                    Location position = new BLangDiagnosticLocation(path,
-//                            location.getLineNr() - 1, location.getLineNr() - 1,
-//                            location.getColumnNr() - 1, location.getColumnNr() - 1);
-//                    dlog.diagnosticInfo();
-//                    dlog.error(position, DiagnosticErrorCode.ERROR_INVALID_JSON_CONTENT,
-//                            getCustomizedErrorMessage(e));
+                    Location position = new BLangDiagnosticLocation(path,
+                            location.getLineNr() - 1, location.getLineNr() - 1,
+                            location.getColumnNr() - 1, location.getColumnNr() - 1);
+                    dataMapperLog.addDiagnostics(position, DiagnosticErrorCode.ERROR_INVALID_JSON_CONTENT,
+                            getCustomizedErrorMessage(e));
                 }
             }
 
@@ -337,7 +355,7 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
                 Utils.writeToFile(sb.toString(), targetStructureFilePath);
             }
         } catch (IOException e) {
-            throw new DataMapperException(e);
+//            throw new DataMapperException(e);
         }
     }
 
@@ -403,12 +421,11 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
                     if ((expectedNumberOfAttributes != attributeCounter) && (counter != 1)) {
                         endLocation = parser.getCurrentLocation();
                         startLocation = startLocationStack.pop();
-//                        Location position = new BLangDiagnosticLocation(path,
-//                                startLocation.getLineNr() - 1, endLocation.getLineNr() - 1,
-//                                startLocation.getColumnNr() - 1, endLocation.getColumnNr() - 1);
-//                        dlog.diagnosticInfo();
-//                        dlog.error(position, DiagnosticErrorCode.ERROR_INVALID_ATTRIBUTE_COUNT,
-//                                expectedNumberOfAttributes, attributeCounter);
+                        Location position = new BLangDiagnosticLocation(path,
+                                startLocation.getLineNr() - 1, endLocation.getLineNr() - 1,
+                                startLocation.getColumnNr() - 1, endLocation.getColumnNr() - 1);
+                        dataMapperLog.addDiagnostics(position, DiagnosticErrorCode.ERROR_INVALID_ATTRIBUTE_COUNT,
+                                expectedNumberOfAttributes, attributeCounter);
                     } else {
                         if (!typeStack.isEmpty()) {
                             ArrayList<JsonNode> lst = sampleDataMap.getOrDefault(typeName, new ArrayList<JsonNode>());
@@ -454,11 +471,12 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
                     } else if (counter == 2) {
                         if (typeRecord.get(typeName).get(name) == null) {
                             JsonLocation location = parser.getCurrentLocation();
-//                            Location position = new BLangDiagnosticLocation(path,
-//                                    location.getLineNr() - 1, location.getLineNr() - 1,
-//                                    location.getColumnNr() - (name.length() + 6), location.getColumnNr() - 4);
-//                            dlog.diagnosticInfo();
-//                            dlog.error(position, DiagnosticErrorCode.ERROR_INVALID_ATTRIBUTE_NAME, typeName, name);
+                            Location position = new BLangDiagnosticLocation(path,
+                                    location.getLineNr() - 1, location.getLineNr() - 1,
+                                    location.getColumnNr() - (name.length() + 6),
+                                    location.getColumnNr() - 4);
+                            dataMapperLog.addDiagnostics(position, DiagnosticErrorCode.ERROR_INVALID_ATTRIBUTE_NAME,
+                                    typeName, name);
                         }
                         attributeCounter++;
                     } else {
@@ -489,11 +507,12 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
 
                         if (!typeRecord.get(typeName).has(name)) {
                             JsonLocation location = parser.getCurrentLocation();
-//                            Location position = new BLangDiagnosticLocation(path,
-//                                    location.getLineNr(), location.getLineNr(),
-//                                    location.getColumnNr() - (name.length() + 5), location.getColumnNr() - 3);
-//                            dlog.diagnosticInfo();
-//                            dlog.error(position, DiagnosticErrorCode.ERROR_INVALID_ATTRIBUTE_NAME, typeName, name);
+                            Location position = new BLangDiagnosticLocation(path,
+                                    location.getLineNr(), location.getLineNr(),
+                                    location.getColumnNr() - (name.length() + 5),
+                                    location.getColumnNr() - 3);
+                            dataMapperLog.addDiagnostics(position, DiagnosticErrorCode.ERROR_INVALID_ATTRIBUTE_NAME,
+                                    typeName, name);
                         }
 
                         counter--;
@@ -519,9 +538,8 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
                 case VALUE_NULL:
                     break;
                 default:
-//                    dlog.diagnosticInfo();
-//                    dlog.error(nodePosition, DiagnosticErrorCode.ERROR_INVALID_JSON_TOKEN, jsonToken);
-//                    break;
+                    dataMapperLog.addDiagnostics(nodePosition, DiagnosticErrorCode.ERROR_INVALID_JSON_TOKEN, jsonToken);
+                    break;
             }
         }
 
