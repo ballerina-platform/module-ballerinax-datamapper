@@ -123,11 +123,10 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
                     SyntaxTree syntaxTree = module.document(documentId).syntaxTree();
                     syntaxTree.rootNode().accept(nodeVisitor);
                     try {
-                        writeFunctionJson(nodeVisitor.getClientMap(), organization, moduleName, versionNumber);
+                        writeFunctionJson(nodeVisitor.getClientMap(), organization, module, versionNumber);
                     } catch (IOException e) {
                         throw new DataMapperException(e);
                     }
-                    int i = 0;
                     if (!nodeVisitor.getRecordTypes().isEmpty()) {
                         typeInformationMap.putAll(nodeVisitor.getRecordTypes());
                     }
@@ -144,7 +143,7 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
     }
 
     private void writeFunctionJson(HashMap<String, Map<String, FunctionRecord>> clientMap, String organization,
-                                   String moduleName, String versionNumber) throws IOException {
+                                   Module module, String versionNumber) throws IOException {
         if (!clientMap.isEmpty()) {
             for (Map.Entry<String, Map<String, FunctionRecord>> client : clientMap.entrySet()) {
                 String clientName = client.getKey();
@@ -224,14 +223,22 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
                         functionsJson = functionsJson.substring(0, functionsJson.lastIndexOf(","));
                     }
 
+                    String moduleName = module.moduleName().toString();
                     functionsJson = "{\"" + encode(organization) + "/" + encode(moduleName) + ":" + versionNumber +
                             "\" : " + "[" + functionsJson + "]}";
                     functions = new StringBuilder();
 
                     String functionsFileName = encode(clientName) + "_functions.json";
                     moduleName = moduleName.substring(moduleName.indexOf(".") + 1);
-                    Path targetFunctionsFilePath = Paths.get(projectDirectory, "modules",
-                            moduleName, "resources", functionsFileName);
+
+                    Path targetFunctionsFilePath;
+                    if (module.isDefaultModule()) {
+                        targetFunctionsFilePath = module.project().sourceRoot().resolve("resources").
+                                resolve(functionsFileName);
+                    } else {
+                        targetFunctionsFilePath = Paths.get(projectDirectory, "modules",
+                                moduleName, "resources", functionsFileName);
+                    }
                     Utils.writeToFile(functionsJson, targetFunctionsFilePath);
                 } else {
                     noFunctionsFlag = true;
@@ -258,10 +265,15 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
                     splitCharacter = URL_ENCODED_COLON;
                 }
                 moduleDirectoryName = moduleDirectoryName.substring(0, moduleDirectoryName.indexOf(splitCharacter));
-                moduleDirectoryName = moduleDirectoryName.substring(moduleDirectoryName.indexOf(".") + 1);
+                Path targetStructureFilePath;
                 String structureFileName = encode(key.substring(key.lastIndexOf(splitCharacter) + 1)) + "_schema.json";
-                Path targetStructureFilePath = Paths.get(projectDirectory, "modules", moduleDirectoryName,
-                        "resources", structureFileName);
+                if (moduleDirectoryName.indexOf(".") + 1 == 0) {
+                    targetStructureFilePath = Paths.get(projectDirectory, "resources", structureFileName);
+                } else {
+                    moduleDirectoryName = moduleDirectoryName.substring(moduleDirectoryName.indexOf(".") + 1);
+                    targetStructureFilePath = Paths.get(projectDirectory, "modules", moduleDirectoryName,
+                            "resources", structureFileName);
+                }
                 String recordEntry = entry.getValue();
 
                 Set<String> keysSet = this.typeInformationMap.keySet();
@@ -291,10 +303,16 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
             }
 
             moduleDirectoryName = moduleDirectoryName.substring(0, moduleDirectoryName.indexOf(splitCharacter));
-            moduleDirectoryName = moduleDirectoryName.substring(moduleDirectoryName.indexOf(".") + 1);
+//            moduleDirectoryName = moduleDirectoryName.substring(moduleDirectoryName.indexOf(".") + 1);
             String structureFileName = encode(key.substring(key.lastIndexOf(splitCharacter) + 1)) + "_schema.json";
-            Path targetStructureFilePath = Paths.get(projectDirectory, "modules", moduleDirectoryName,
-                    "resources", structureFileName);
+            Path targetStructureFilePath;
+            if (moduleDirectoryName.indexOf(".") + 1 == 0) {
+                targetStructureFilePath = Paths.get(projectDirectory, "resources", structureFileName);
+            } else {
+                moduleDirectoryName = moduleDirectoryName.substring(moduleDirectoryName.indexOf(".") + 1);
+                targetStructureFilePath = Paths.get(projectDirectory, "modules", moduleDirectoryName,
+                        "resources", structureFileName);
+            }
             String recordEntry = this.typeInformationMap.get(key);
 
             try {
@@ -310,7 +328,13 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
             String moduleName = null;
             moduleName = key.substring(key.indexOf("/") + 1);
             moduleName = moduleName.substring(0, moduleName.indexOf(":"));
-            moduleName = moduleName.substring(moduleName.indexOf(".") + 1);
+            Path issueDataFilePath;
+            if (moduleName.indexOf(".") + 1 == 0) {
+                issueDataFilePath = Paths.get(projectDirectory, "resources");
+            } else {
+                String moduleNameTest = moduleName.substring(moduleName.indexOf(".") + 1);
+                issueDataFilePath = Paths.get(projectDirectory, "modules", moduleNameTest, "resources");
+            }
             listOfModuleNames.add(moduleName);
         }
 
@@ -320,8 +344,15 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
     }
 
     private void processSampleDataFiles(String moduleName) {
-        moduleName = moduleName.substring(moduleName.indexOf(".") + 1);
-        Path issueDataFilePath = Paths.get(projectDirectory, "modules", moduleName, "resources");
+//        moduleName = moduleName.substring(moduleName.indexOf(".") + 1);
+        Path issueDataFilePath;
+        if (moduleName.indexOf(".") + 1 == 0) {
+            issueDataFilePath = Paths.get(projectDirectory, "resources");
+        } else {
+            moduleName = moduleName.substring(moduleName.indexOf(".") + 1);
+            issueDataFilePath = Paths.get(projectDirectory, "modules", moduleName, "resources");
+        }
+//        Path issueDataFilePath = Paths.get(projectDirectory, "modules", moduleName, "resources");
         List<String> listOfSampleDataJSONFiles = null;
 
         try {
@@ -349,10 +380,17 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
 
                 String moduleDirectoryName = key.substring(key.indexOf("/") + 1);
                 moduleDirectoryName = moduleDirectoryName.substring(0, moduleDirectoryName.indexOf(":"));
-                moduleDirectoryName = moduleDirectoryName.substring(moduleDirectoryName.indexOf(".") + 1);
                 String structureFileName = key.substring(key.lastIndexOf(":") + 1) + "_data.json";
-                targetStructureFilePath = Paths.get(projectDirectory, "modules", moduleDirectoryName,
-                        "resources", structureFileName);
+//                moduleDirectoryName = moduleDirectoryName.substring(moduleDirectoryName.indexOf(".") + 1);
+                if (moduleDirectoryName.indexOf(".") + 1 == 0) {
+                    targetStructureFilePath = Paths.get(projectDirectory, "resources", structureFileName);
+                } else {
+                    moduleDirectoryName = moduleDirectoryName.substring(moduleDirectoryName.indexOf(".") + 1);
+                    targetStructureFilePath = Paths.get(projectDirectory, "modules", moduleDirectoryName,
+                            "resources", structureFileName);
+                }
+//                targetStructureFilePath = Paths.get(projectDirectory, "modules", moduleDirectoryName,
+//                        "resources", structureFileName);
 
                 sb.append("{\"");
                 sb.append(key);
