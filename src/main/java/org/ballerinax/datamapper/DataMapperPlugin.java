@@ -303,7 +303,6 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
             }
 
             moduleDirectoryName = moduleDirectoryName.substring(0, moduleDirectoryName.indexOf(splitCharacter));
-//            moduleDirectoryName = moduleDirectoryName.substring(moduleDirectoryName.indexOf(".") + 1);
             String structureFileName = encode(key.substring(key.lastIndexOf(splitCharacter) + 1)) + "_schema.json";
             Path targetStructureFilePath;
             if (moduleDirectoryName.indexOf(".") + 1 == 0) {
@@ -328,13 +327,6 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
             String moduleName = null;
             moduleName = key.substring(key.indexOf("/") + 1);
             moduleName = moduleName.substring(0, moduleName.indexOf(":"));
-            Path issueDataFilePath;
-            if (moduleName.indexOf(".") + 1 == 0) {
-                issueDataFilePath = Paths.get(projectDirectory, "resources");
-            } else {
-                String moduleNameTest = moduleName.substring(moduleName.indexOf(".") + 1);
-                issueDataFilePath = Paths.get(projectDirectory, "modules", moduleNameTest, "resources");
-            }
             listOfModuleNames.add(moduleName);
         }
 
@@ -344,7 +336,6 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
     }
 
     private void processSampleDataFiles(String moduleName) {
-//        moduleName = moduleName.substring(moduleName.indexOf(".") + 1);
         Path issueDataFilePath;
         if (moduleName.indexOf(".") + 1 == 0) {
             issueDataFilePath = Paths.get(projectDirectory, "resources");
@@ -352,7 +343,6 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
             moduleName = moduleName.substring(moduleName.indexOf(".") + 1);
             issueDataFilePath = Paths.get(projectDirectory, "modules", moduleName, "resources");
         }
-//        Path issueDataFilePath = Paths.get(projectDirectory, "modules", moduleName, "resources");
         List<String> listOfSampleDataJSONFiles = null;
 
         try {
@@ -381,7 +371,6 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
                 String moduleDirectoryName = key.substring(key.indexOf("/") + 1);
                 moduleDirectoryName = moduleDirectoryName.substring(0, moduleDirectoryName.indexOf(":"));
                 String structureFileName = key.substring(key.lastIndexOf(":") + 1) + "_data.json";
-//                moduleDirectoryName = moduleDirectoryName.substring(moduleDirectoryName.indexOf(".") + 1);
                 if (moduleDirectoryName.indexOf(".") + 1 == 0) {
                     targetStructureFilePath = Paths.get(projectDirectory, "resources", structureFileName);
                 } else {
@@ -389,8 +378,6 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
                     targetStructureFilePath = Paths.get(projectDirectory, "modules", moduleDirectoryName,
                             "resources", structureFileName);
                 }
-//                targetStructureFilePath = Paths.get(projectDirectory, "modules", moduleDirectoryName,
-//                        "resources", structureFileName);
 
                 sb.append("{\"");
                 sb.append(key);

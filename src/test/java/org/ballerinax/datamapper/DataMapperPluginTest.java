@@ -319,6 +319,32 @@ public class DataMapperPluginTest {
         Assert.assertEquals(result.getErrorCount(), 0);
     }
 
+    @Test
+    public void testHappyPathDefaultModuleClient() {
+        CompileResult result = BCompileUtil.compile("test20/modules/module_test20");
+        File jsonFile = new File("src/test/resources/test20/modules/module_test20/resources/Assignee_schema.json");
+        Assert.assertEquals(jsonFile.exists(), true);
+        jsonFile = new File("src/test/resources/test20/resources/Client_functions.json");
+        Assert.assertEquals(jsonFile.exists(), true);
+        jsonFile = new File("src/test/resources/test20/resources/Creator_schema.json");
+        Assert.assertEquals(jsonFile.exists(), true);
+        jsonFile = new File("src/test/resources/test20/resources/Issue_schema.json");
+        Assert.assertEquals(jsonFile.exists(), true);
+        jsonFile = new File("src/test/resources/test20/resources/Label_schema.json");
+        Assert.assertEquals(jsonFile.exists(), true);
+        jsonFile = new File("src/test/resources/test20/modules/module_test20/resources/Assignee_schema.json");
+        Assert.assertEquals(jsonFile.exists(), true);
+        jsonFile = new File("src/test/resources/test20/modules/module_test20/resources/Client_functions.json");
+        Assert.assertEquals(jsonFile.exists(), true);
+        jsonFile = new File("src/test/resources/test20/modules/module_test20/resources/Creator_schema.json");
+        Assert.assertEquals(jsonFile.exists(), true);
+        jsonFile = new File("src/test/resources/test20/modules/module_test20/resources/Issue_schema.json");
+        Assert.assertEquals(jsonFile.exists(), true);
+        jsonFile = new File("src/test/resources/test20/modules/module_test20/resources/Label_schema.json");
+        Assert.assertEquals(jsonFile.exists(), true);
+        Assert.assertEquals(result.getErrorCount(), 0);
+    }
+
     public static boolean deleteDirectory(Path directoryPath) {
         File directory = new File(String.valueOf(directoryPath));
         if (directory.isDirectory()) {
@@ -510,6 +536,23 @@ public class DataMapperPluginTest {
             deleteDirectory(Path.of(path));
 
             path = "src/test/resources/test19/target/";
+            deleteDirectory(Path.of(path));
+
+            path = "src/test/resources/test20/resources/";
+            Files.deleteIfExists(Paths.get(path + "Assignee_schema.json"));
+            Files.deleteIfExists(Paths.get(path + "Client_functions.json"));
+            Files.deleteIfExists(Paths.get(path + "Creator_schema.json"));
+            Files.deleteIfExists(Paths.get(path + "Issue_schema.json"));
+            Files.deleteIfExists(Paths.get(path + "Label_schema.json"));
+
+            path = "src/test/resources/test20/modules/module_test20/resources/";
+            Files.deleteIfExists(Paths.get(path + "Assignee_schema.json"));
+            Files.deleteIfExists(Paths.get(path + "Client_functions.json"));
+            Files.deleteIfExists(Paths.get(path + "Creator_schema.json"));
+            Files.deleteIfExists(Paths.get(path + "Issue_schema.json"));
+            Files.deleteIfExists(Paths.get(path + "Label_schema.json"));
+
+            path = "src/test/resources/test20/target/";
             deleteDirectory(Path.of(path));
 
         } catch (IOException e) {
