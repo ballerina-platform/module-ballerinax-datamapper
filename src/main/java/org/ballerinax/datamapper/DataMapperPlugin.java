@@ -267,12 +267,12 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
                 moduleDirectoryName = moduleDirectoryName.substring(0, moduleDirectoryName.indexOf(splitCharacter));
                 Path targetStructureFilePath;
                 String structureFileName = encode(key.substring(key.lastIndexOf(splitCharacter) + 1)) + "_schema.json";
-                if (moduleDirectoryName.indexOf(".") + 1 == 0) {
-                    targetStructureFilePath = Paths.get(projectDirectory, "resources", structureFileName);
-                } else {
+                if (moduleDirectoryName.contains(".")) {
                     moduleDirectoryName = moduleDirectoryName.substring(moduleDirectoryName.indexOf(".") + 1);
                     targetStructureFilePath = Paths.get(projectDirectory, "modules", moduleDirectoryName,
                             "resources", structureFileName);
+                } else {
+                    targetStructureFilePath = Paths.get(projectDirectory, "resources", structureFileName);
                 }
                 String recordEntry = entry.getValue();
 
@@ -305,12 +305,12 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
             moduleDirectoryName = moduleDirectoryName.substring(0, moduleDirectoryName.indexOf(splitCharacter));
             String structureFileName = encode(key.substring(key.lastIndexOf(splitCharacter) + 1)) + "_schema.json";
             Path targetStructureFilePath;
-            if (moduleDirectoryName.indexOf(".") + 1 == 0) {
-                targetStructureFilePath = Paths.get(projectDirectory, "resources", structureFileName);
-            } else {
+            if (moduleDirectoryName.contains(".")) {
                 moduleDirectoryName = moduleDirectoryName.substring(moduleDirectoryName.indexOf(".") + 1);
                 targetStructureFilePath = Paths.get(projectDirectory, "modules", moduleDirectoryName,
                         "resources", structureFileName);
+            } else {
+                targetStructureFilePath = Paths.get(projectDirectory, "resources", structureFileName);
             }
             String recordEntry = this.typeInformationMap.get(key);
 
@@ -337,11 +337,11 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
 
     private void processSampleDataFiles(String moduleName) {
         Path issueDataFilePath;
-        if (moduleName.indexOf(".") + 1 == 0) {
-            issueDataFilePath = Paths.get(projectDirectory, "resources");
-        } else {
+        if (moduleName.contains(".")) {
             moduleName = moduleName.substring(moduleName.indexOf(".") + 1);
             issueDataFilePath = Paths.get(projectDirectory, "modules", moduleName, "resources");
+        } else {
+            issueDataFilePath = Paths.get(projectDirectory, "resources");
         }
         List<String> listOfSampleDataJSONFiles = null;
 
@@ -371,12 +371,12 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
                 String moduleDirectoryName = key.substring(key.indexOf("/") + 1);
                 moduleDirectoryName = moduleDirectoryName.substring(0, moduleDirectoryName.indexOf(":"));
                 String structureFileName = key.substring(key.lastIndexOf(":") + 1) + "_data.json";
-                if (moduleDirectoryName.indexOf(".") + 1 == 0) {
-                    targetStructureFilePath = Paths.get(projectDirectory, "resources", structureFileName);
-                } else {
+                if (moduleDirectoryName.contains(".")) {
                     moduleDirectoryName = moduleDirectoryName.substring(moduleDirectoryName.indexOf(".") + 1);
                     targetStructureFilePath = Paths.get(projectDirectory, "modules", moduleDirectoryName,
                             "resources", structureFileName);
+                } else {
+                    targetStructureFilePath = Paths.get(projectDirectory, "resources", structureFileName);
                 }
 
                 sb.append("{\"");
