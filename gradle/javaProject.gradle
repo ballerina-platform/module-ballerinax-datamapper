@@ -1,7 +1,6 @@
 apply plugin: "java"
 apply plugin: "com.github.spotbugs"
 apply plugin: "checkstyle"
-apply plugin: 'maven-publish'
 
 tasks.withType(JavaCompile) {
     options.encoding = 'UTF-8'
@@ -153,17 +152,6 @@ checkstyle {
     toolVersion '7.8.2'
     configFile rootProject.file("build-config/checkstyle/build/checkstyle.xml")
     configProperties = ["suppressionFile" : rootProject.file("build-config/checkstyle/build/suppressions.xml")]
-}
-
-publishing {
-    publications {
-        mavenJava(MavenPublication) {
-            groupId project.group
-            artifactId project.name
-            version = project.version
-            from components.java
-        }
-    }
 }
 
 spotbugsMain.finalizedBy validateSpotbugs
