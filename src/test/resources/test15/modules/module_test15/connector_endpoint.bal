@@ -1,4 +1,4 @@
-// Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+// Copyright (c) 2021, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
 //
 // WSO2 Inc. licenses this file to you under the Apache License,
 // Version 2.0 (the "License"); you may not use this file except
@@ -14,15 +14,8 @@
 // specific language governing permissions and limitations
 // under the License.
 
-public client class '\ \/\:\@\[\`\{\~_Connector {
-    boolean action2Invoked = false;
-
-    public function init(string param1, string param2, int param3) {
-
-    }
-
-    remote function '\ \/\:\@\[\`\{\~_Action() returns string {
-        string 'sample_String_2 = "this ";
-        return 'sample_String_2 ;
+public client class Client {
+    remote function createIssue()  returns Issue|error {
+        return {};
     }
 }

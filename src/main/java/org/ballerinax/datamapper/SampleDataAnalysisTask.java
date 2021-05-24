@@ -1,21 +1,20 @@
 /*
- * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ *  Copyright (c) 2021, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
- * Version 2.0 (the "License"); you may not use this file except
- * in compliance with the License.
- * You may obtain a copy of the License at
+ *  WSO2 Inc. licenses this file to you under the Apache License,
+ *  Version 2.0 (the "License"); you may not use this file except
+ *  in compliance with the License.
+ *  You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
  */
-
 package org.ballerinax.datamapper;
 
 import com.fasterxml.jackson.core.JsonFactory;
@@ -36,10 +35,10 @@ import io.ballerina.projects.Module;
 import io.ballerina.projects.ModuleId;
 import io.ballerina.projects.Package;
 import io.ballerina.projects.Project;
+import io.ballerina.projects.plugins.AnalysisTask;
+import io.ballerina.projects.plugins.CompilationAnalysisContext;
 import io.ballerina.tools.diagnostics.Diagnostic;
 import io.ballerina.tools.diagnostics.Location;
-import org.ballerinalang.compiler.plugins.AbstractCompilerPlugin;
-import org.ballerinalang.util.diagnostic.DiagnosticLog;
 import org.ballerinax.datamapper.diagnostic.DataMapperDiagnosticLog;
 import org.ballerinax.datamapper.diagnostic.DiagnosticErrorCode;
 import org.ballerinax.datamapper.exceptions.DataMapperException;
@@ -51,15 +50,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -71,260 +67,52 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * Compiler extension to generate sample JSON files for data mapper.
+ * An {@code AnalysisTask} that is triggered for data mapper.
  */
-public class DataMapperPlugin extends AbstractCompilerPlugin {
-    public static final String URL_ENCODED_COLON = "%3A";
+public class SampleDataAnalysisTask implements AnalysisTask<CompilationAnalysisContext> {
+
     private DataMapperDiagnosticLog dataMapperLog;
-    private HashMap<String, ArrayList<JsonNode>> sampleDataMap;
-    private HashMap<String, String> typeInformationMap;
-    private HashSet<String> typeSet;
+    private final HashMap<String, ArrayList<JsonNode>> sampleDataMap;
+    private final HashMap<String, String> typeInformationMap;
     public StringBuilder functions;
     private Location nodePosition;
-    private String projectSourceFolder;
-    private boolean clientFlag;
-    private boolean noFunctionsFlag;
     private JsonParser parser;
     private String currentTypeStructure;
     private String projectDirectory;
-    private DiagnosticLog dlog;
 
-    public DataMapperPlugin() {
-        this.sampleDataMap = new HashMap<String, ArrayList<JsonNode>>();
-        this.typeSet = new HashSet<String>();
+    public SampleDataAnalysisTask() {
+        this.sampleDataMap = new HashMap<>();
         this.functions = new StringBuilder();
         this.typeInformationMap = new HashMap<>();
     }
 
     @Override
-    public void init(DiagnosticLog diagnosticLog) {
-        this.dlog = diagnosticLog;
-    }
-
-
-    @Override
-    public List<Diagnostic> codeAnalyze(Project project) {
+    public void perform(CompilationAnalysisContext compilationAnalysisContext) {
+        Project project = compilationAnalysisContext.currentPackage().project();
         this.dataMapperLog = new DataMapperDiagnosticLog();
         projectDirectory = project.sourceRoot().toString();
         Package currentPackage = project.currentPackage();
         Collection<ModuleId> moduleIds = currentPackage.moduleIds();
-        clientFlag = checkForClient(currentPackage, moduleIds);
+        boolean clientFlag = checkForClient(currentPackage, moduleIds);
 
         if (clientFlag) {
-            String organization = currentPackage.packageOrg().toString();
-            String versionNumber = currentPackage.packageVersion().toString();
             for (ModuleId moduleId : moduleIds) {
-                String moduleName = moduleId.moduleName();
-
                 Module module = currentPackage.module(moduleId);
                 DataMapperNodeVisitor nodeVisitor = new DataMapperNodeVisitor();
                 nodeVisitor.setModule(module);
                 for (DocumentId documentId : module.documentIds()) {
                     SyntaxTree syntaxTree = module.document(documentId).syntaxTree();
                     syntaxTree.rootNode().accept(nodeVisitor);
-                    try {
-                        writeFunctionJson(nodeVisitor.getClientMap(), organization, module, versionNumber);
-                    } catch (IOException e) {
-                        throw new DataMapperException(e);
-                    }
                     if (!nodeVisitor.getRecordTypes().isEmpty()) {
                         typeInformationMap.putAll(nodeVisitor.getRecordTypes());
                     }
                 }
             }
         }
-        pluginExecutionCompleted();
-
-        if (this.dataMapperLog.getDataMapperPluginDiagnostic().isEmpty()) {
-            return Collections.emptyList();
-        } else {
-            return this.dataMapperLog.getDataMapperPluginDiagnostic();
-        }
-    }
-
-    private void writeFunctionJson(HashMap<String, Map<String, FunctionRecord>> clientMap, String organization,
-                                   Module module, String versionNumber) throws IOException {
-        if (!clientMap.isEmpty()) {
-            for (Map.Entry<String, Map<String, FunctionRecord>> client : clientMap.entrySet()) {
-                String clientName = client.getKey();
-                Map<String, FunctionRecord> functionMaps = client.getValue();
-                boolean flag = false;
-                if (!functionMaps.isEmpty()) {
-                    noFunctionsFlag = false;
-                    Iterator<Map.Entry<String, FunctionRecord>> iterator = functionMaps.entrySet().iterator();
-                    while (iterator.hasNext()) {
-                        Map.Entry<String, FunctionRecord> function = iterator.next();
-                        String functionName = function.getKey();
-                        HashMap<String, List<String>> parameters = function.getValue().getParameters();
-                        functions.append("{\"function\":{\"name\":\"" + encode(functionName) +
-                                "\",\"requiredParams\":[");
-                        if (!parameters.isEmpty()) {
-                            Iterator<String> iterator1 = function.getValue().getParameters().keySet().iterator();
-                            while (iterator1.hasNext()) {
-                                String parameterName = iterator1.next();
-                                functions.append("{\"");
-                                functions.append(encode(parameterName));
-                                functions.append("\":[\"");
-                                List<String> typeVariables = parameters.get(parameterName);
-                                for (Iterator<String> iter = typeVariables.iterator(); iter.hasNext(); ) {
-                                    String typeVariable = iter.next();
-                                    functions.append(typeVariable);
-                                    if (typeVariable.endsWith("?")) {
-                                        this.typeSet.add(typeVariable.substring(0, typeVariable.length() - 1));
-                                    } else if (typeVariable.endsWith("[]")) {
-                                        this.typeSet.add(typeVariable.substring(0, typeVariable.length() - 2));
-                                    } else {
-                                        this.typeSet.add(typeVariable);
-                                    }
-                                    if (iter.hasNext()) {
-                                        functions.append("\", \"");
-                                    }
-                                }
-                                functions.append("\"]");
-                                if (iterator1.hasNext()) {
-                                    functions.append("},");
-                                } else {
-                                    functions.append("}");
-                                }
-                            }
-                        }
-                        functions.append("],\"returnType\":[\"");
-                        List<String> returnTypes = function.getValue().getReturnTypes();
-                        for (Iterator<String> iter = returnTypes.iterator(); iter.hasNext(); ) {
-                            String returnType = iter.next();
-                            functions.append(returnType);
-                            if (returnType.endsWith("?")) {
-                                this.typeSet.add(returnType.substring(0, returnType.length() - 1));
-                            } else if (returnType.endsWith("[]")) {
-                                this.typeSet.add(returnType.substring(0, returnType.length() - 2));
-                            } else {
-                                this.typeSet.add(returnType);
-                            }
-                            if (iter.hasNext()) {
-                                functions.append("\", \"");
-                            }
-                        }
-                        functions.append("\"]");
-
-                        flag = iterator.hasNext();
-
-                        if (flag) {
-                            functions.append("}},");
-                        } else {
-                            functions.append("}}");
-                        }
-                    }
-                }
-
-                if (functions.length() != 0) {
-                    String functionsJson = functions.toString();
-
-                    if (functionsJson.endsWith(",")) {
-                        functionsJson = functionsJson.substring(0, functionsJson.lastIndexOf(","));
-                    }
-
-                    String moduleName = module.moduleName().toString();
-                    functionsJson = "{\"" + encode(organization) + "/" + encode(moduleName) + ":" + versionNumber +
-                            "\" : " + "[" + functionsJson + "]}";
-                    functions = new StringBuilder();
-
-                    String functionsFileName = encode(clientName) + "_functions.json";
-                    moduleName = moduleName.substring(moduleName.indexOf(".") + 1);
-
-                    Path targetFunctionsFilePath;
-                    if (module.isDefaultModule()) {
-                        targetFunctionsFilePath = module.project().sourceRoot().resolve("resources").
-                                resolve(functionsFileName);
-                    } else {
-                        targetFunctionsFilePath = Paths.get(projectDirectory, "modules",
-                                moduleName, "resources", functionsFileName);
-                    }
-                    Utils.writeToFile(functionsJson, targetFunctionsFilePath);
-                } else {
-                    noFunctionsFlag = true;
-                }
-            }
-        }
-    }
-
-
-    public void pluginExecutionCompleted() {
-        if (!clientFlag || noFunctionsFlag) {
-            return;
-        }
-
-        Set<String> secondaryItemsSet = new HashSet<String>();
-        Set<String> itemsWrittenSet = new HashSet<String>();
-
+        Set<String> listOfModuleNames = new HashSet<>();
         for (Map.Entry<String, String> entry : this.typeInformationMap.entrySet()) {
             String key = entry.getKey();
-            if (this.typeSet.contains(key)) {
-                String moduleDirectoryName = key.substring(key.indexOf("/") + 1);
-                String splitCharacter = ":";
-                if (moduleDirectoryName.contains(URL_ENCODED_COLON)) {
-                    splitCharacter = URL_ENCODED_COLON;
-                }
-                moduleDirectoryName = moduleDirectoryName.substring(0, moduleDirectoryName.indexOf(splitCharacter));
-                Path targetStructureFilePath;
-                String structureFileName = encode(key.substring(key.lastIndexOf(splitCharacter) + 1)) + "_schema.json";
-                if (moduleDirectoryName.contains(".")) {
-                    moduleDirectoryName = moduleDirectoryName.substring(moduleDirectoryName.indexOf(".") + 1);
-                    targetStructureFilePath = Paths.get(projectDirectory, "modules", moduleDirectoryName,
-                            "resources", structureFileName);
-                } else {
-                    targetStructureFilePath = Paths.get(projectDirectory, "resources", structureFileName);
-                }
-                String recordEntry = entry.getValue();
-
-                Set<String> keysSet = this.typeInformationMap.keySet();
-                for (String s : keysSet) {
-                    if (recordEntry.contains(s)) {
-                        secondaryItemsSet.add(s);
-                    }
-                }
-
-                try {
-                    Utils.writeToFile(recordEntry, targetStructureFilePath);
-                    itemsWrittenSet.add(key);
-                } catch (IOException e) {
-                    throw new DataMapperException(e);
-                }
-            }
-        }
-
-        secondaryItemsSet.removeAll(itemsWrittenSet);
-
-        for (String key : secondaryItemsSet) {
-            String moduleDirectoryName = key.substring(key.indexOf("/") + 1);
-
-            String splitCharacter = ":";
-            if (moduleDirectoryName.contains(URL_ENCODED_COLON)) {
-                splitCharacter = URL_ENCODED_COLON;
-            }
-
-            moduleDirectoryName = moduleDirectoryName.substring(0, moduleDirectoryName.indexOf(splitCharacter));
-            String structureFileName = encode(key.substring(key.lastIndexOf(splitCharacter) + 1)) + "_schema.json";
-            Path targetStructureFilePath;
-            if (moduleDirectoryName.contains(".")) {
-                moduleDirectoryName = moduleDirectoryName.substring(moduleDirectoryName.indexOf(".") + 1);
-                targetStructureFilePath = Paths.get(projectDirectory, "modules", moduleDirectoryName,
-                        "resources", structureFileName);
-            } else {
-                targetStructureFilePath = Paths.get(projectDirectory, "resources", structureFileName);
-            }
-            String recordEntry = this.typeInformationMap.get(key);
-
-            try {
-                Utils.writeToFile(recordEntry, targetStructureFilePath);
-            } catch (IOException e) {
-                throw new DataMapperException(e);
-            }
-        }
-
-        Set<String> listOfModuleNames = new HashSet<String>();
-        for (Map.Entry<String, String> entry : this.typeInformationMap.entrySet()) {
-            String key = entry.getKey();
-            String moduleName = null;
+            String moduleName;
             moduleName = key.substring(key.indexOf("/") + 1);
             moduleName = moduleName.substring(0, moduleName.indexOf(":"));
             listOfModuleNames.add(moduleName);
@@ -332,6 +120,11 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
 
         for (String moduleName : listOfModuleNames) {
             processSampleDataFiles(moduleName);
+        }
+        if (!this.dataMapperLog.getDataMapperPluginDiagnostic().isEmpty()) {
+            for (Diagnostic diagnostic : this.dataMapperLog.getDataMapperPluginDiagnostic()) {
+                compilationAnalysisContext.reportDiagnostic(diagnostic);
+            }
         }
     }
 
@@ -343,7 +136,7 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
         } else {
             issueDataFilePath = Paths.get(projectDirectory, "resources");
         }
-        List<String> listOfSampleDataJSONFiles = null;
+        List<String> listOfSampleDataJSONFiles;
 
         try {
             Stream<Path> files = Files.walk(issueDataFilePath);
@@ -401,13 +194,12 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
         }
     }
 
-    private List<String> readDataArray(String path) throws IOException {
+    private void readDataArray(String path) throws IOException {
         JsonFactory factory = new JsonFactory();
         InputStream inputStream = new FileInputStream(path);
         Reader fileReader = new InputStreamReader(inputStream, "UTF-8");
         parser = factory.createParser(fileReader);
 
-        List<String> messages = new ArrayList<String>();
         String typeName = null;
         JsonNode typeRecord = null;
         JsonNode dataRecord = null;
@@ -415,9 +207,9 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
         int previousExpectedNumberOfAttributes = 0;
         int attributeCounter = 0;
         long counter = -1;
-        Stack<JsonNode> typeStack = new Stack<JsonNode>();
-        Stack<Integer> attributeCounterStack = new Stack<Integer>();
-        Stack<JsonLocation> startLocationStack = new Stack<JsonLocation>();
+        Stack<JsonNode> typeStack = new Stack<>();
+        Stack<Integer> attributeCounterStack = new Stack<>();
+        Stack<JsonLocation> startLocationStack = new Stack<>();
         String previousTypeName = null;
         String previousName = null;
         boolean readyToMoveUpFlag = false;
@@ -428,8 +220,8 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
             if (jsonToken == null) {
                 break;
             }
-            JsonLocation startLocation = null;
-            JsonLocation endLocation = null;
+            JsonLocation startLocation;
+            JsonLocation endLocation;
 
             switch (jsonToken) {
                 case START_ARRAY:
@@ -580,12 +372,12 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
                 case VALUE_NULL:
                     break;
                 default:
-                    dataMapperLog.addDiagnostics(nodePosition, DiagnosticErrorCode.ERROR_INVALID_JSON_TOKEN, jsonToken);
+                    dataMapperLog.addDiagnostics(nodePosition, DiagnosticErrorCode.ERROR_INVALID_JSON_TOKEN,
+                            jsonToken);
                     break;
             }
         }
 
-        return messages;
     }
 
     public JsonNode constructJSON(String jsonData) throws IOException {
@@ -593,7 +385,6 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
         JsonNode result = objectMapper.readTree(jsonData);
         return result;
     }
-
 
     private String getCustomizedErrorMessage(Exception e) {
         String errorMessage = null;
@@ -611,15 +402,6 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
         return errorMessage;
     }
 
-    private String encode(String fileName) {
-        try {
-            String encodedFileName = URLEncoder.encode(fileName, "UTF-8");
-            return encodedFileName;
-        } catch (UnsupportedEncodingException e) {
-            throw new DataMapperException(e);
-        }
-    }
-
     private boolean checkForClient(Package currentPackage, Collection<ModuleId> moduleIds) {
         for (ModuleId moduleId : moduleIds) {
             Module module = currentPackage.module(moduleId);
@@ -635,4 +417,5 @@ public class DataMapperPlugin extends AbstractCompilerPlugin {
         }
         return false;
     }
+
 }
