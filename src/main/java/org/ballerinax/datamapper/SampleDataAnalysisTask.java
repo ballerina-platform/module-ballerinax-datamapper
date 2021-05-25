@@ -121,11 +121,9 @@ public class SampleDataAnalysisTask implements AnalysisTask<CompilationAnalysisC
         for (String moduleName : listOfModuleNames) {
             processSampleDataFiles(moduleName);
         }
-//        if (!this.dataMapperLog.getDataMapperPluginDiagnostic().isEmpty()) {
             for (Diagnostic diagnostic : this.dataMapperLog.getDataMapperPluginDiagnostic()) {
                 compilationAnalysisContext.reportDiagnostic(diagnostic);
             }
-//        }
     }
 
     private void processSampleDataFiles(String moduleName) {
