@@ -126,25 +126,27 @@ public class DataMapperNodeVisitor extends NodeVisitor {
                         }
                         List<String> paraType = new ArrayList<>();
                         FunctionRecord functionRecord = new FunctionRecord();
-                        for (ParameterSymbol parameter : method.typeDescriptor().parameters()) {
-                            if (parameter.getName().isPresent()) {
-                                String parameterName = parameter.getName().get();
-                                if (parameter.typeDescriptor().typeKind() == TypeDescKind.UNION) {
-                                    List<TypeSymbol> paraList = ((UnionTypeSymbol) parameter.typeDescriptor()).
-                                            memberTypeDescriptors();
-                                    for (TypeSymbol typeSymbol : paraList) {
-                                        if (typeSymbol.typeKind() == TypeDescKind.ERROR ||
-                                                typeSymbol.typeKind() == TypeDescKind.NIL) {
-                                            continue;
-                                        } else {
-                                            paraType.add(typeSymbol.signature());
+                        if(method.typeDescriptor().params().isPresent()) {
+                            for (ParameterSymbol parameter : method.typeDescriptor().params().get()) {
+                                if (parameter.getName().isPresent()) {
+                                    String parameterName = parameter.getName().get();
+                                    if (parameter.typeDescriptor().typeKind() == TypeDescKind.UNION) {
+                                        List<TypeSymbol> paraList = ((UnionTypeSymbol) parameter.typeDescriptor()).
+                                                memberTypeDescriptors();
+                                        for (TypeSymbol typeSymbol : paraList) {
+                                            if (typeSymbol.typeKind() == TypeDescKind.ERROR ||
+                                                    typeSymbol.typeKind() == TypeDescKind.NIL) {
+                                                continue;
+                                            } else {
+                                                paraType.add(typeSymbol.signature());
+                                            }
                                         }
+                                    } else {
+                                        paraType.add(parameter.typeDescriptor().signature());
                                     }
-                                } else {
-                                    paraType.add(parameter.typeDescriptor().signature());
+                                    functionRecord.addParameter(parameterName, paraType);
+                                    paraType = new ArrayList<>();
                                 }
-                                functionRecord.addParameter(parameterName, paraType);
-                                paraType = new ArrayList<>();
                             }
                         }
                         TypeSymbol returnTypeSymbol = method.typeDescriptor().returnTypeDescriptor().get();
