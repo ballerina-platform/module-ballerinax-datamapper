@@ -20,6 +20,7 @@ package org.ballerinax.datamapper.diagnostic;
 
 import io.ballerina.tools.diagnostics.Diagnostic;
 import io.ballerina.tools.diagnostics.DiagnosticCode;
+import io.ballerina.tools.diagnostics.DiagnosticFactory;
 import io.ballerina.tools.diagnostics.DiagnosticInfo;
 import io.ballerina.tools.diagnostics.Location;
 
@@ -48,13 +49,12 @@ public class DataMapperDiagnosticLog {
     }
 
     public void addDiagnostics(Location position, DiagnosticErrorCode diagnosticErrorCode, Object... args) {
-        DiagnosticInfo diagnosticInfo = new DiagnosticInfo(
-                diagnosticErrorCode.diagnosticId(), diagnosticErrorCode.messageKey(),
-                diagnosticErrorCode.severity());
         String msg = formatMessage(ERROR_PREFIX, diagnosticErrorCode, args);
-        DataMapperDiagnostic dataMapperDiagnostic = new DataMapperDiagnostic(position, diagnosticInfo, msg);
-        dataMapperPluginDiagnostic.add(dataMapperDiagnostic);
-        int i = 0;
+        DiagnosticInfo diagnosticInfo = new DiagnosticInfo(
+                diagnosticErrorCode.diagnosticId(), msg,
+                diagnosticErrorCode.severity());
+
+        dataMapperPluginDiagnostic.add(DiagnosticFactory.createDiagnostic(diagnosticInfo, position));
     }
 
     private String formatMessage(String prefix, DiagnosticCode code, Object[] args) {
