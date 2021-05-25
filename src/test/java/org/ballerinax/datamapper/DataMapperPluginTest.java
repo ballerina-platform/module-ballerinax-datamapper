@@ -47,6 +47,8 @@ public class DataMapperPluginTest {
     @Test
     public void testErrorNegativeThreeFieldsWithDifferentNames() {
         CompileResult result = BCompileUtil.compile("test2/modules/module_test2");
+        File jsonFile = new File("src/test/resources/test2/modules/module_test2/resources/Creator_data.json");
+        Assert.assertEquals(jsonFile.exists(), true);
         Assert.assertEquals(result.getErrorCount(), 3);
         int i = 0;
         int j = 0;
@@ -75,6 +77,8 @@ public class DataMapperPluginTest {
     @Test
     public void testErrorNegativeMissingOneField() {
         CompileResult result = BCompileUtil.compile("test3/modules/module_test3");
+        File jsonFile = new File("src/test/resources/test3/modules/module_test3/resources/Creator_data.json");
+        Assert.assertEquals(jsonFile.exists(), true);
         Assert.assertEquals(result.getErrorCount(), 1);
 
         int i = 0;

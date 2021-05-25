@@ -126,7 +126,7 @@ public class DataMapperNodeVisitor extends NodeVisitor {
                         }
                         List<String> paraType = new ArrayList<>();
                         FunctionRecord functionRecord = new FunctionRecord();
-                        if(method.typeDescriptor().params().isPresent()) {
+                        if (method.typeDescriptor().params().isPresent()) {
                             for (ParameterSymbol parameter : method.typeDescriptor().params().get()) {
                                 if (parameter.getName().isPresent()) {
                                     String parameterName = parameter.getName().get();
