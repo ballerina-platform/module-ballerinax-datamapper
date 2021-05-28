@@ -34,6 +34,7 @@ import io.ballerina.projects.DocumentId;
 import io.ballerina.projects.Module;
 import io.ballerina.projects.ModuleId;
 import io.ballerina.projects.Package;
+import io.ballerina.projects.PackageCompilation;
 import io.ballerina.projects.Project;
 import io.ballerina.projects.plugins.AnalysisTask;
 import io.ballerina.projects.plugins.CompilationAnalysisContext;
@@ -93,13 +94,14 @@ public class SampleDataAnalysisTask implements AnalysisTask<CompilationAnalysisC
         projectDirectory = project.sourceRoot().toString();
         Package currentPackage = project.currentPackage();
         Collection<ModuleId> moduleIds = currentPackage.moduleIds();
-        boolean clientFlag = checkForClient(currentPackage, moduleIds);
+        PackageCompilation compilation = compilationAnalysisContext.compilation();
+        boolean clientFlag = checkForClient(compilation, moduleIds);
 
         if (clientFlag) {
             for (ModuleId moduleId : moduleIds) {
                 Module module = currentPackage.module(moduleId);
-                DataMapperNodeVisitor nodeVisitor = new DataMapperNodeVisitor();
-                nodeVisitor.setModule(module);
+                SemanticModel semanticModel = compilation.getSemanticModel(moduleId);
+                DataMapperNodeVisitor nodeVisitor = new DataMapperNodeVisitor(semanticModel);
                 for (DocumentId documentId : module.documentIds()) {
                     SyntaxTree syntaxTree = module.document(documentId).syntaxTree();
                     syntaxTree.rootNode().accept(nodeVisitor);
@@ -400,10 +402,9 @@ public class SampleDataAnalysisTask implements AnalysisTask<CompilationAnalysisC
         return errorMessage;
     }
 
-    private boolean checkForClient(Package currentPackage, Collection<ModuleId> moduleIds) {
+    private boolean checkForClient(PackageCompilation compilation, Collection<ModuleId> moduleIds) {
         for (ModuleId moduleId : moduleIds) {
-            Module module = currentPackage.module(moduleId);
-            SemanticModel semanticModel = module.getCompilation().getSemanticModel();
+            SemanticModel semanticModel = compilation.getSemanticModel(moduleId);
             for (Symbol moduleSymbol : semanticModel.moduleSymbols()) {
                 if (moduleSymbol.kind() == SymbolKind.CLASS) {
                     List<Qualifier> qualifiers = ((BallerinaClassSymbol) moduleSymbol).qualifiers();
