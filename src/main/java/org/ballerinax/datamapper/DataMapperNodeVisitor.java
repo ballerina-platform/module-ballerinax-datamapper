@@ -38,8 +38,6 @@ import io.ballerina.compiler.syntax.tree.NodeVisitor;
 import io.ballerina.compiler.syntax.tree.SyntaxKind;
 import io.ballerina.compiler.syntax.tree.Token;
 import io.ballerina.compiler.syntax.tree.TypeDefinitionNode;
-import io.ballerina.projects.Module;
-import io.ballerina.projects.ModuleCompilation;
 import org.ballerinax.datamapper.exceptions.DataMapperException;
 
 import java.util.ArrayList;
@@ -57,17 +55,13 @@ public class DataMapperNodeVisitor extends NodeVisitor {
     private final HashMap<String, String> recordTypes;
     private SemanticModel model;
 
-    public DataMapperNodeVisitor() {
+    public DataMapperNodeVisitor(SemanticModel model) {
         this.recordTypes = new HashMap<>();
+        this.model = model;
     }
 
     public HashMap<String, String> getRecordTypes() {
         return recordTypes;
-    }
-
-    public void setModule(Module module) {
-        ModuleCompilation compilation = module.getCompilation();
-        this.model = compilation.getSemanticModel();
     }
 
     private String getFieldTypes(Map<String, RecordFieldSymbol> fieldSymbolMap) {
