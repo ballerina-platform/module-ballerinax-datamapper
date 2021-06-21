@@ -216,10 +216,10 @@ public class DataMapperPluginTest {
         j = 0;
 
         BAssertUtil.validateError(result, diagnosticIndex[j++],
+                "record name not found: ballerinax/test12.module_test12:0.1.0:Issue", 3, 6);
+        BAssertUtil.validateError(result, diagnosticIndex[j],
                 "record name not found: menu",
                 3, 4);
-        BAssertUtil.validateError(result, diagnosticIndex[j],
-                "record name not found: ballerinax/test12.module_test12:0.1.0:Issue", 3, 6);
     }
 
     @Test
@@ -294,10 +294,10 @@ public class DataMapperPluginTest {
         j = 0;
 
         BAssertUtil.validateError(result, diagnosticIndex[j++],
-                "invalid record name: expected Issue, found Creator", 3, 6);
-        BAssertUtil.validateError(result, diagnosticIndex[j],
                 "record name not found: ballerinax/test17.module_test17:0.1.0:Creator2",
                 3, 6);
+        BAssertUtil.validateError(result, diagnosticIndex[j],
+                "invalid record name: expected Issue, found Creator", 3, 6);
     }
 
     public static boolean deleteDirectory(Path directoryPath) {

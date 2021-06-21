@@ -57,6 +57,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -144,6 +145,8 @@ public class SampleDataAnalysisTask implements AnalysisTask<CompilationAnalysisC
             Stream<Path> files = Files.walk(issueDataFilePath);
             listOfSampleDataJSONFiles = files.map(x -> x.toString())
                     .filter(f -> f.endsWith("_data.json")).collect(Collectors.toList());
+
+            Collections.sort(listOfSampleDataJSONFiles);
 
             for (String path : listOfSampleDataJSONFiles) {
                 try {
