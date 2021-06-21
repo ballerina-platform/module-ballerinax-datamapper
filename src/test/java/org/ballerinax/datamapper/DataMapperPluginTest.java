@@ -145,8 +145,8 @@ public class DataMapperPluginTest {
                 "type ballerinax/test6.module_test6:0.1.0:Creator does not have an attribute " +
                         "named login2", 4, 13);
         BAssertUtil.validateError(result, diagnosticIndex[j],
-             "type ballerinax/test6.module_test6:0.1.0:Creator does not have an attribute " +
-                     "named avatarUrl3", 7, 13);
+                "type ballerinax/test6.module_test6:0.1.0:Creator does not have an attribute " +
+                        "named avatarUrl3", 7, 13);
     }
 
     @Test
@@ -246,7 +246,6 @@ public class DataMapperPluginTest {
         CompileResult result = BCompileUtil.compile("test17/modules/module_test17");
         Assert.assertEquals(result.getErrorCount(), 2);
 
-
         int i = 0;
         int j = 0;
         Diagnostic[] diagnostics = result.getDiagnostics();
@@ -262,10 +261,42 @@ public class DataMapperPluginTest {
         j = 0;
 
         BAssertUtil.validateError(result, diagnosticIndex[j++],
-                "record name not found: ballerinax/test17.module_test17:0.1.0:Creator2",
-                3, 6);
+            "record name not found: ballerinax/test17.module_test17:0.1.0:Creator2",
+            3, 6);
         BAssertUtil.validateError(result, diagnosticIndex[j],
-                "invalid record name: expected Issue, found Creator", 3, 6);
+            "invalid record name: expected Issue, found Creator", 3, 6);
+    }
+
+    public void testConnectorNamesWithDot() {
+        CompileResult result = BCompileUtil.compile("test16.package/modules/module_test16");
+        Assert.assertEquals(result.getErrorCount(), 4);
+
+        int i = 0;
+        int j = 0;
+        Diagnostic[] diagnostics = result.getDiagnostics();
+        int[] diagnosticIndex = new int[result.getErrorCount()];
+
+        for (Diagnostic diag : diagnostics) {
+            if (diag.diagnosticInfo().severity() == DiagnosticSeverity.ERROR) {
+                diagnosticIndex[j] = i;
+                j++;
+            }
+            i++;
+        }
+        j = 0;
+        BAssertUtil.validateError(result, diagnosticIndex[j++],
+                "type ballerinax/test16.package:0.1.0:Issue does not have an attribute named id2",
+                4, 13);
+        BAssertUtil.validateError(result, diagnosticIndex[j++],
+                "type ballerinax/test16.package.module_test16:0.1.0:Issue does not have an attribute " +
+                        "named id2", 4, 13);
+        BAssertUtil.validateError(result, diagnosticIndex[j++],
+                "type ballerinax/test16.package.module_test16:0.1.0:Issue does not have an attribute " +
+                        "named bodyText2", 5, 13);
+        BAssertUtil.validateError(result, diagnosticIndex[j],
+                "type ballerinax/test16.package.module_test16:0.1.0:Issue does not have an attribute " +
+                        "named closed11", 6, 13);
+
     }
 
     public static boolean deleteDirectory(Path directoryPath) {
@@ -343,6 +374,9 @@ public class DataMapperPluginTest {
             deleteDirectory(Path.of(path));
 
             path = "src/test/resources/test15/target/";
+            deleteDirectory(Path.of(path));
+
+            path = "src/test/resources/test16.package/target/";
             deleteDirectory(Path.of(path));
 
             path = "src/test/resources/test17/target/";
