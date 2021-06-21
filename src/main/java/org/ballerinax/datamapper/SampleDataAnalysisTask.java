@@ -57,6 +57,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -145,6 +146,8 @@ public class SampleDataAnalysisTask implements AnalysisTask<CompilationAnalysisC
             listOfSampleDataJSONFiles = files.map(x -> x.toString())
                     .filter(f -> f.endsWith("_data.json")).collect(Collectors.toList());
 
+            Collections.sort(listOfSampleDataJSONFiles);
+
             for (String path : listOfSampleDataJSONFiles) {
                 try {
                     readDataArray(path);
@@ -201,6 +204,9 @@ public class SampleDataAnalysisTask implements AnalysisTask<CompilationAnalysisC
         InputStream inputStream = new FileInputStream(path);
         Reader fileReader = new InputStreamReader(inputStream, "UTF-8");
         parser = factory.createParser(fileReader);
+        String[] recordNameArray = path.split("/");
+        String recordName = recordNameArray[recordNameArray.length - 1];
+        recordName = recordName.split("_")[0];
 
         String typeName = null;
         JsonNode typeRecord = null;
@@ -290,9 +296,36 @@ public class SampleDataAnalysisTask implements AnalysisTask<CompilationAnalysisC
                     final String name = parser.getCurrentName();
                     if (counter == 1) {
                         typeName = name;
+
                         String value = typeInformationMap.get(name);
                         if (value == null) {
                             errorFlag = true;
+                            JsonLocation location = parser.getCurrentLocation();
+                            Location position = new BLangDiagnosticLocation(path,
+                                    location.getLineNr(), location.getLineNr(),
+                                    location.getColumnNr() - (name.length() + 5),
+                                    location.getColumnNr() - 3);
+                            dataMapperLog.addDiagnostics(position, DiagnosticErrorCode.ERROR_RECORD_NAME_NOT_FOUND,
+                                    name);
+                            continue;
+                        }
+
+                        String[] recordNameArrayInternal = typeName.split(":");
+                        String recordNameInternal = recordNameArrayInternal[recordNameArrayInternal.length - 1];
+                        if (recordNameArrayInternal.length < 3) {
+                            errorFlag = true;
+                            continue;
+                        }
+
+                        if (!recordNameInternal.equals(recordName)) {
+                            errorFlag = true;
+                            JsonLocation location = parser.getCurrentLocation();
+                            Location position = new BLangDiagnosticLocation(path,
+                                    location.getLineNr(), location.getLineNr(),
+                                    location.getColumnNr() - (name.length() + 5),
+                                    location.getColumnNr() - 3);
+                            dataMapperLog.addDiagnostics(position, DiagnosticErrorCode.ERROR_INVALID_RECORD_NAME,
+                                    recordName, recordNameInternal);
                             continue;
                         }
 
