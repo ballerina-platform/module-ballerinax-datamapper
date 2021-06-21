@@ -1,7 +1,7 @@
 {
-    "ballerinax/test15.module_test15:0.1.0:Issue": [
+    "ballerinax/test16.package:0.1.0:Issue": [
         {
-            "id": "MDU6SXNzdWU2MDAwMzQwOTc=",
+            "id2": "MDU6SXNzdWU2MDAwMzQwOTc=",
             "bodyText": "Test5",
             "closed": "false",
             "closedAt": "",

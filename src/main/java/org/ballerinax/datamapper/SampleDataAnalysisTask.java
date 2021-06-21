@@ -80,6 +80,7 @@ public class SampleDataAnalysisTask implements AnalysisTask<CompilationAnalysisC
     private JsonParser parser;
     private String currentTypeStructure;
     private String projectDirectory;
+    private String packageName;
 
     public SampleDataAnalysisTask() {
         this.sampleDataMap = new HashMap<>();
@@ -98,6 +99,7 @@ public class SampleDataAnalysisTask implements AnalysisTask<CompilationAnalysisC
         boolean clientFlag = checkForClient(compilation, moduleIds);
 
         if (clientFlag) {
+            packageName = currentPackage.packageName().toString();
             for (ModuleId moduleId : moduleIds) {
                 Module module = currentPackage.module(moduleId);
                 SemanticModel semanticModel = compilation.getSemanticModel(moduleId);
@@ -130,8 +132,8 @@ public class SampleDataAnalysisTask implements AnalysisTask<CompilationAnalysisC
 
     private void processSampleDataFiles(String moduleName) {
         Path issueDataFilePath;
-        if (moduleName.contains(".")) {
-            moduleName = moduleName.substring(moduleName.indexOf(".") + 1);
+        if (moduleName.contains(".") && !moduleName.equals(packageName)) {
+            moduleName = moduleName.replace(packageName + ".", "");
             issueDataFilePath = Paths.get(projectDirectory, "modules", moduleName, "resources");
         } else {
             issueDataFilePath = Paths.get(projectDirectory, "resources");
@@ -164,8 +166,8 @@ public class SampleDataAnalysisTask implements AnalysisTask<CompilationAnalysisC
                 String moduleDirectoryName = key.substring(key.indexOf("/") + 1);
                 moduleDirectoryName = moduleDirectoryName.substring(0, moduleDirectoryName.indexOf(":"));
                 String structureFileName = key.substring(key.lastIndexOf(":") + 1) + "_data.json";
-                if (moduleDirectoryName.contains(".")) {
-                    moduleDirectoryName = moduleDirectoryName.substring(moduleDirectoryName.indexOf(".") + 1);
+                if (moduleDirectoryName.contains(".") && !moduleDirectoryName.equals(packageName)) {
+                    moduleDirectoryName = moduleDirectoryName.replace(packageName + ".", "");
                     targetStructureFilePath = Paths.get(projectDirectory, "modules", moduleDirectoryName,
                             "resources", structureFileName);
                 } else {
