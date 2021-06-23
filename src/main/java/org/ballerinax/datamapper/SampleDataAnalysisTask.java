@@ -46,6 +46,7 @@ import org.ballerinax.datamapper.exceptions.DataMapperException;
 import org.ballerinax.datamapper.util.Utils;
 import org.wso2.ballerinalang.compiler.diagnostic.BLangDiagnosticLocation;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -163,6 +164,10 @@ public class SampleDataAnalysisTask implements AnalysisTask<CompilationAnalysisC
 
             for (Map.Entry<String, ArrayList<JsonNode>> entry : this.sampleDataMap.entrySet()) {
                 String key = entry.getKey();
+
+                if (entry.getValue().size() == 0) {
+                    continue;
+                }
                 Path targetStructureFilePath = null;
                 StringBuilder sb = new StringBuilder();
 
@@ -175,6 +180,11 @@ public class SampleDataAnalysisTask implements AnalysisTask<CompilationAnalysisC
                             "resources", structureFileName);
                 } else {
                     targetStructureFilePath = Paths.get(projectDirectory, "resources", structureFileName);
+                }
+                File targetFile = new File(String.valueOf(targetStructureFilePath));
+
+                if (targetFile.exists()) {
+                    continue;
                 }
 
                 sb.append("{\"");
@@ -204,9 +214,6 @@ public class SampleDataAnalysisTask implements AnalysisTask<CompilationAnalysisC
         InputStream inputStream = new FileInputStream(path);
         Reader fileReader = new InputStreamReader(inputStream, "UTF-8");
         parser = factory.createParser(fileReader);
-        String[] recordNameArray = path.split("/");
-        String recordName = recordNameArray[recordNameArray.length - 1];
-        recordName = recordName.split("_")[0];
 
         String typeName = null;
         JsonNode typeRecord = null;
@@ -296,36 +303,9 @@ public class SampleDataAnalysisTask implements AnalysisTask<CompilationAnalysisC
                     final String name = parser.getCurrentName();
                     if (counter == 1) {
                         typeName = name;
-
                         String value = typeInformationMap.get(name);
                         if (value == null) {
                             errorFlag = true;
-                            JsonLocation location = parser.getCurrentLocation();
-                            Location position = new BLangDiagnosticLocation(path,
-                                    location.getLineNr(), location.getLineNr(),
-                                    location.getColumnNr() - (name.length() + 5),
-                                    location.getColumnNr() - 3);
-                            dataMapperLog.addDiagnostics(position, DiagnosticErrorCode.ERROR_RECORD_NAME_NOT_FOUND,
-                                    name);
-                            continue;
-                        }
-
-                        String[] recordNameArrayInternal = typeName.split(":");
-                        String recordNameInternal = recordNameArrayInternal[recordNameArrayInternal.length - 1];
-                        if (recordNameArrayInternal.length < 3) {
-                            errorFlag = true;
-                            continue;
-                        }
-
-                        if (!recordNameInternal.equals(recordName)) {
-                            errorFlag = true;
-                            JsonLocation location = parser.getCurrentLocation();
-                            Location position = new BLangDiagnosticLocation(path,
-                                    location.getLineNr(), location.getLineNr(),
-                                    location.getColumnNr() - (name.length() + 5),
-                                    location.getColumnNr() - 3);
-                            dataMapperLog.addDiagnostics(position, DiagnosticErrorCode.ERROR_INVALID_RECORD_NAME,
-                                    recordName, recordNameInternal);
                             continue;
                         }
 
