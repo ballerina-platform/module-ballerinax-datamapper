@@ -214,9 +214,6 @@ public class SampleDataAnalysisTask implements AnalysisTask<CompilationAnalysisC
         InputStream inputStream = new FileInputStream(path);
         Reader fileReader = new InputStreamReader(inputStream, "UTF-8");
         parser = factory.createParser(fileReader);
-//        String[] recordNameArray = path.split("/");
-//        String recordName = recordNameArray[recordNameArray.length - 1];
-//        recordName = recordName.split("_")[0];
 
         String typeName = null;
         JsonNode typeRecord = null;
