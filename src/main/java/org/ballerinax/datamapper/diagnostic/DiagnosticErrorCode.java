@@ -28,14 +28,12 @@ public enum DiagnosticErrorCode implements DiagnosticCode {
     ERROR_INVALID_ATTRIBUTE_NAME("DME0001", "invalid.attribute.name"),
     ERROR_INVALID_ATTRIBUTE_COUNT("DME0002", "invalid.attribute.count"),
     ERROR_INVALID_JSON_CONTENT("DME0003", "invalid.json.content"),
-    ERROR_INVALID_JSON_TOKEN("DME0004", "invalid.json.token"),
-    ERROR_INVALID_RECORD_NAME("DME0005", "invalid.record.name"),
-    ERROR_RECORD_NAME_NOT_FOUND("DME0006", "record.name.not.found");
+    ERROR_INVALID_JSON_TOKEN("DME0004", "invalid.json.token");
 
     private String diagnosticId;
     private String messageKey;
 
-    private DiagnosticErrorCode(String diagnosticId, String messageKey) {
+    DiagnosticErrorCode(String diagnosticId, String messageKey) {
         this.diagnosticId = diagnosticId;
         this.messageKey = messageKey;
     }
