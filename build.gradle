@@ -82,9 +82,6 @@ allprojects {
             requireBranch = null
         }
     }
-
-    afterReleaseBuild.dependsOn publishToMavenLocal
-    afterReleaseBuild.dependsOn publish
 }
 
 apply from: "gradle/javaProject.gradle"
