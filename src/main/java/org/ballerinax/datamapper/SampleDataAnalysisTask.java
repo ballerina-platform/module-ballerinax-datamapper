@@ -98,7 +98,7 @@ public class SampleDataAnalysisTask implements AnalysisTask<CompilationAnalysisC
         Package currentPackage = project.currentPackage();
         Collection<ModuleId> moduleIds = currentPackage.moduleIds();
         PackageCompilation compilation = compilationAnalysisContext.compilation();
-        boolean clientFlag = checkForClient(compilation, moduleIds);
+        boolean clientFlag = checkForClient(compilation, moduleIds, currentPackage);
 
         if (clientFlag) {
             packageName = currentPackage.packageName().toString();
@@ -127,9 +127,9 @@ public class SampleDataAnalysisTask implements AnalysisTask<CompilationAnalysisC
         for (String moduleName : listOfModuleNames) {
             processSampleDataFiles(moduleName);
         }
-            for (Diagnostic diagnostic : this.dataMapperLog.getDataMapperPluginDiagnostic()) {
-                compilationAnalysisContext.reportDiagnostic(diagnostic);
-            }
+        for (Diagnostic diagnostic : this.dataMapperLog.getDataMapperPluginDiagnostic()) {
+            compilationAnalysisContext.reportDiagnostic(diagnostic);
+        }
     }
 
     private void processSampleDataFiles(String moduleName) {
@@ -417,7 +417,14 @@ public class SampleDataAnalysisTask implements AnalysisTask<CompilationAnalysisC
         return errorMessage;
     }
 
-    private boolean checkForClient(PackageCompilation compilation, Collection<ModuleId> moduleIds) {
+    private boolean checkForClient(PackageCompilation compilation, Collection<ModuleId> moduleIds,
+                                   Package currentPackage) {
+        if (moduleIds.size() == 1) {
+            ModuleId moduleId = moduleIds.iterator().next();
+            if (moduleId.moduleName().equals(".") && currentPackage.packageName().toString().equals(".")) {
+                return false;
+            }
+        }
         for (ModuleId moduleId : moduleIds) {
             SemanticModel semanticModel = compilation.getSemanticModel(moduleId);
             for (Symbol moduleSymbol : semanticModel.moduleSymbols()) {
