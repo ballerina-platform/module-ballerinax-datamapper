@@ -34,3 +34,5 @@ jobs:
           packageUser: ${{ secrets.BALLERINA_BOT_USERNAME }}
           packagePAT: ${{ secrets.BALLERINA_BOT_TOKEN }}
         run: ./gradlew publish
+      - name: Generate Codecov Report
+        uses: codecov/codecov-action@v2
