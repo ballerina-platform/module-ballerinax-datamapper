@@ -121,10 +121,13 @@ test {
             exceptionFormat "full"
         }
     }
+    finalizedBy jacocoTestReport
+}
 
-    jacoco {
-        enabled = true
-        destinationFile = file("$buildDir/coverage-reports/jacoco.exec")
+jacocoTestReport {
+    dependsOn test
+    reports {
+        xml.enabled true
     }
 }
 
