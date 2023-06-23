@@ -8,7 +8,7 @@ tasks.withType(JavaCompile) {
     options.encoding = 'UTF-8'
 }
 
-sourceCompatibility = JavaVersion.VERSION_11
+sourceCompatibility = JavaVersion.VERSION_17
 
 configurations {
     bDistributionDir
@@ -19,13 +19,13 @@ configurations {
 dependencies {
     jacocoRuntime "org.jacoco:org.jacoco.agent:0.8.5:runtime"
 
-    compile group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.8.6'
-    compile group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: '2.8.6'
-    compile group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: '2.8.0'
+    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.15.2'
+    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: '2.15.2'
+    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: '2.15.2'
     implementation group: 'org.ballerinalang', name: 'ballerina-lang', version: "${ballerinaLangVersion}"
     implementation group: 'org.ballerinalang', name: 'ballerina-test-utils', version: "${ballerinaLangVersion}"
     implementation group: 'org.ballerinalang', name: 'ballerina-tools-api', version: "${ballerinaLangVersion}"
-    testCompile 'org.testng:testng:6.13.1'
+    testImplementation 'org.testng:testng:7.6.1'
 
     checkstyle project(":build-config:checkstyle")
     checkstyle "com.puppycrawl.tools:checkstyle:${puppycrawlCheckstyleVersion}"
@@ -127,7 +127,7 @@ test {
 jacocoTestReport {
     dependsOn test
     reports {
-        xml.enabled true
+        xml.required = true
     }
 }
 
