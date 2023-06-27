@@ -95,6 +95,7 @@ task copyStdlibs(type: Copy) {
 
 task copyLib(type: Copy) {
     dependsOn unzip
+    dependsOn jar
     into("${bDistribution}/bre/lib/")
     from "${project.buildDir}/libs"
 }
