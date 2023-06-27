@@ -44,3 +44,5 @@ artifacts.add('default', file("$project.buildDir/checkstyle.xml")) {
 artifacts.add('default', file("$project.buildDir/suppressions.xml")) {
     builtBy('downloadMultipleFiles')
 }
+
+tasks.compileJava.dependsOn(':build-config:checkstyle:downloadMultipleFiles')

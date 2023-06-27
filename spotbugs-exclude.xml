@@ -6,4 +6,9 @@
     <Match>
         <Package name="org.ballerinax.datamapper" />
     </Match>
+    <Match>
+        <Class name="org.ballerinax.datamapper.diagnostic.DataMapperDiagnosticLog"/>
+        <Field name="dataMapperPluginDiagnostic"/>
+        <Bug pattern="EI_EXPOSE_REP"/>
+    </Match>
 </FindBugsFilter>
