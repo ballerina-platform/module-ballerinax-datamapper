@@ -65,6 +65,7 @@ task unpackStdLibs() {
 task copyStdlibs(type: Copy) {
     dependsOn unpackStdLibs
     into bDistribution
+    duplicatesStrategy = 'include'
 
     /* Standard Libraries */
     configurations.ballerinaStdLibs.resolvedConfiguration.resolvedArtifacts.each { artifact ->
