@@ -180,7 +180,7 @@ public class DataMapperPluginTest {
         BAssertUtil.validateError(result, diagnosticIndex,
                 "invalid JSON content: Unexpected character (: (code 58)): was " +
                         "expecting double-quote to start field name\n" +
-                        " at [Source: java.io.InputStreamReader@OBJECTREF; line: 4, column: 14]",
+                        " at [Source: (InputStreamReader); line: 4, column: 14]",
                 4, 14);
     }
 
