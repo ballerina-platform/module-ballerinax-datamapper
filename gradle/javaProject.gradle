@@ -8,7 +8,11 @@ tasks.withType(JavaCompile) {
     options.encoding = 'UTF-8'
 }
 
-sourceCompatibility = JavaVersion.VERSION_17
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(25)
+    }
+}
 
 configurations {
     bDistributionDir
@@ -17,7 +21,7 @@ configurations {
 }
 
 dependencies {
-    jacocoRuntime "org.jacoco:org.jacoco.agent:0.8.10:runtime"
+    jacocoRuntime "org.jacoco:org.jacoco.agent:0.8.13:runtime"
 
     implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.15.2'
     implementation group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: '2.15.2'
@@ -35,7 +39,7 @@ dependencies {
     }
 }
 
-def bDistribution = file("$project.buildDir/extracted-distribution/jballerina-tools-${ballerinaLangVersion}")
+def bDistribution = layout.buildDirectory.dir("extracted-distribution/jballerina-tools-${ballerinaLangVersion}").get().asFile
 def packageOrg = "ballerina"
 
 task unzip {
@@ -43,7 +47,7 @@ task unzip {
         configurations.balTools.resolvedConfiguration.resolvedArtifacts.each { artifact ->
             copy {
                 from project.zipTree(artifact.getFile())
-                into new File(project.buildDir, "extracted-distribution/")
+                into layout.buildDirectory.dir("extracted-distribution/").get().asFile
             }
         }
     }
@@ -56,7 +60,7 @@ task unpackStdLibs() {
         configurations.ballerinaStdLibs.resolvedConfiguration.resolvedArtifacts.each { artifact ->
             copy {
                 from project.zipTree(artifact.getFile())
-                into new File("${project.buildDir}/extracted-distribution", artifact.name + "-zip")
+                into layout.buildDirectory.dir("extracted-distribution/" + artifact.name + "-zip").get().asFile
             }
         }
     }
@@ -69,7 +73,7 @@ task copyStdlibs(type: Copy) {
 
     /* Standard Libraries */
     configurations.ballerinaStdLibs.resolvedConfiguration.resolvedArtifacts.each { artifact ->
-        def artifactExtractedPath = "${project.buildDir}/extracted-distribution/" + artifact.name + "-zip"
+        def artifactExtractedPath = layout.buildDirectory.dir("extracted-distribution/" + artifact.name + "-zip").get().asFile.absolutePath
         into("bir-cache/") {
             from "${artifactExtractedPath}/caches/bir"
         }
@@ -99,7 +103,7 @@ task copyLib(type: Copy) {
     dependsOn unzip
     dependsOn jar
     into("${bDistribution}/bre/lib/")
-    from "${project.buildDir}/libs"
+    from layout.buildDirectory.dir("libs").get().asFile
 }
 
 test {
@@ -137,13 +141,13 @@ spotbugsMain {
     ignoreFailures = true
     effort = "max"
     reportLevel = "low"
-    reportsDir = file("$project.buildDir/reports/spotbugs")
+    reportsDir = layout.buildDirectory.dir("reports/spotbugs").get().asFile
     def excludeFile = file("spotbugs-exclude.xml")
     if (excludeFile.exists()) {
         it.excludeFilter = excludeFile
     }
     reports {
-        text.enabled = true
+        text.required = true
     }
 }
 
