@@ -8,8 +8,6 @@ tasks.withType(JavaCompile) {
     options.encoding = 'UTF-8'
 }
 
-sourceCompatibility = JavaVersion.VERSION_17
-
 configurations {
     bDistributionDir
     balTools
@@ -35,7 +33,7 @@ dependencies {
     }
 }
 
-def bDistribution = file("$project.buildDir/extracted-distribution/jballerina-tools-${ballerinaLangVersion}")
+def bDistribution = file("${layout.buildDirectory.get().asFile}/extracted-distribution/jballerina-tools-${ballerinaLangVersion}")
 def packageOrg = "ballerina"
 
 task unzip {
@@ -43,7 +41,7 @@ task unzip {
         configurations.balTools.resolvedConfiguration.resolvedArtifacts.each { artifact ->
             copy {
                 from project.zipTree(artifact.getFile())
-                into new File(project.buildDir, "extracted-distribution/")
+                into new File(layout.buildDirectory.get().asFile, "extracted-distribution/")
             }
         }
     }
@@ -56,7 +54,7 @@ task unpackStdLibs() {
         configurations.ballerinaStdLibs.resolvedConfiguration.resolvedArtifacts.each { artifact ->
             copy {
                 from project.zipTree(artifact.getFile())
-                into new File("${project.buildDir}/extracted-distribution", artifact.name + "-zip")
+                into new File("${layout.buildDirectory.get().asFile}/extracted-distribution", artifact.name + "-zip")
             }
         }
     }
@@ -69,7 +67,7 @@ task copyStdlibs(type: Copy) {
 
     /* Standard Libraries */
     configurations.ballerinaStdLibs.resolvedConfiguration.resolvedArtifacts.each { artifact ->
-        def artifactExtractedPath = "${project.buildDir}/extracted-distribution/" + artifact.name + "-zip"
+        def artifactExtractedPath = "${layout.buildDirectory.get().asFile}/extracted-distribution/" + artifact.name + "-zip"
         into("bir-cache/") {
             from "${artifactExtractedPath}/caches/bir"
         }
@@ -99,7 +97,7 @@ task copyLib(type: Copy) {
     dependsOn unzip
     dependsOn jar
     into("${bDistribution}/bre/lib/")
-    from "${project.buildDir}/libs"
+    from "${layout.buildDirectory.get().asFile}/libs"
 }
 
 test {
@@ -137,7 +135,7 @@ spotbugsMain {
     ignoreFailures = true
     effort = "max"
     reportLevel = "low"
-    reportsDir = file("$project.buildDir/reports/spotbugs")
+    reportsDir = layout.buildDirectory.dir("reports/spotbugs").get().asFile
     def excludeFile = file("spotbugs-exclude.xml")
     if (excludeFile.exists()) {
         it.excludeFilter = excludeFile
